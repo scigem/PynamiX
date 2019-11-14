@@ -14,6 +14,7 @@ Welcome to PynamiX's documentation!
 This code is made up of the following modules:
     * `io`_
     * `measure`_
+    * `data`_
 
 .. _io:
 
@@ -30,6 +31,16 @@ Measure
 
 .. automodule:: pynamix.measure
   :members:
+
+.. _data:
+
+Data
+==========================
+
+.. automodule:: pynamix.data
+ :members:
+
+
 
 Indices and tables
 ==================
