@@ -1,23 +1,30 @@
+import json
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
 from imageio import imwrite as imsave
 
-def load_seq(filename,nt=None,ny=None,nx=None,varian=False):
+def load_seq(filename,varian=False):
     '''
-    Load an SEQ file and optionally reshape it if given values for nt,nx and ny
+    Load an SEQ file and related logfile
     '''
+    if filename[-3:] == 'seq': filename = filename[:-4] # strip seq file ending if present
+    f = open(filename + '.seq','rb')
+
     if varian:
-        offset = 2048
+        a = memmap(f,dtype="H",mode='r',offset=2048)
+        logfile = {}
     else:
-        offset = 0
-
-    f = open(filename,'rb')
-    a = memmap(f,dtype="H",mode='r',offset=2048)
-
-    if nt is not None and ny is not None and nx is not None:
-        a.reshape(nt,ny,nx)
-
-    return a
+        a = memmap(f,dtype="H",mode='r')
+        if os.path.exists(filename + '.logfile'):
+            g = open(filename + '.logfile')
+            logfile = json.load(g)
+            nt = logfile['']
+            ny = logfile['']
+            nx = logfile['']
+            a.reshape(nt,ny,nx)
+        else:
+            logfile = {}
+    return a, logfile
 
 def save_as_tiffs(pathname,b,vmin=0,vmax=65535,angle=0,gray=True,logscale=False):
     '''

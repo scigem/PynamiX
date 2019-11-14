@@ -1,6 +1,8 @@
 README.md
 setup.py
 pynamix/__init__.py
+pynamix/io.py
+pynamix/measure.py
 pynamix.egg-info/PKG-INFO
 pynamix.egg-info/SOURCES.txt
 pynamix.egg-info/dependency_links.txt
