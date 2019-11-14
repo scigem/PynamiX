@@ -13,6 +13,7 @@ Welcome to PynamiX's documentation!
 
 This code is made up of the following modules:
     * `io`_
+    * `measure`_
 
 .. _io:
 
@@ -22,6 +23,13 @@ IO
 .. automodule:: pynamix.io
    :members:
 
+   .. _measure:
+
+   Measure
+   ==========================
+
+   .. automodule:: pynamix.measure
+      :members:
 
 Indices and tables
 ==================
