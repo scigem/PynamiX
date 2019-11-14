@@ -23,13 +23,13 @@ IO
 .. automodule:: pynamix.io
    :members:
 
-   .. _measure:
+.. _measure:
 
-   Measure
-   ==========================
+Measure
+==========================
 
-   .. automodule:: pynamix.measure
-      :members:
+.. automodule:: pynamix.measure
+  :members:
 
 Indices and tables
 ==================
