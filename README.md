@@ -6,7 +6,19 @@
 Work in progress. Hopefully via `pip install pynamix` but YMMV.
 
 ## Dependencies
-Work in progress - should be handled in pip install. Currently requires `python3`.
+Work in progress - should be handled in pip install. Currently requires:
+```
+python3
+matplotlib
+numpy
+```
+
+## Deploying to PyPI
+Run the following to make a new distribution and upload it to PyPI
+```
+python3 setup.py sdist
+twine upload dist/*
+```
 
 ## Documentation
 
