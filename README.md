@@ -1,1 +1,3 @@
 # PynamiX
+
+Current structure
