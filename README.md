@@ -5,6 +5,9 @@
 ## Installation
 Work in progress. Hopefully via `pip install pynamix` but YMMV.
 
+## Examples
+Try out the included Jupyter notebook to see how to use the package.
+
 ## Dependencies
 Work in progress - should be handled in pip install. Currently requires:
 ```
