@@ -4,6 +4,7 @@ pynamix/__init__.py
 pynamix/data.py
 pynamix/io.py
 pynamix/measure.py
+pynamix/testing.py
 pynamix.egg-info/PKG-INFO
 pynamix.egg-info/SOURCES.txt
 pynamix.egg-info/dependency_links.txt
