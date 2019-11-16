@@ -1,4 +1,4 @@
-import os, json
+import os, json, glob
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
@@ -95,6 +95,45 @@ def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,logscal
             plt.subplots_adjust(left=0,right=1,bottom=0,top=1)
             plt.axis('off')
             plt.savefig(foldername + '/' + str(t).zfill(5) + '.tiff',dpi=72)
+
+def load_PIVLab_txtfiles(foldername):
+    '''Load a folder full of PIVLab txtfiles and return the data as a series of arrays
+
+    Args:
+        foldername (str): Name of the folder that contains the text files to load.
+
+    Returns:
+        4 element tuple containing
+        
+        - x (1D array): The `x` location of each patch
+        - y (1D array): The `y` location of each patch
+        - u (3D array): The horizontal velocity of each patch. Has the shape [nt,nx,y].
+        - v (3D array): The vertical velocity of each patch. Has the shape [nt,nx,y].
+    '''
+
+    files = glob.glob(foldername + '/*.txt')
+    files = sorted(files)
+    nt = len(files)
+    for i,f in enumerate(files):
+        data = np.loadtxt(f,skiprows=3,delimiter=',')
+        if i == 0:
+            np = data.shape[0] # number of data points in total
+            x_all = data[:,0]
+            y_all = data[:,1]
+            u = np.zeros([nt,np])
+            v = np.zeros([nt,np])
+        # elif i % 500 == 0: print('Up to file ' + str(i))
+        u[i] = data[:,2]
+        v[i] = data[:,3]
+
+    x = unique(x_all)
+    y = unique(y_all)
+    nx = len(x)
+    ny = len(y)
+    u = u.reshape([nt,nx,ny])
+    v = v.reshape([nt,nx,ny])
+
+    return x,y,u,v
 
 # Testing area
 if __name__ == '__main__':

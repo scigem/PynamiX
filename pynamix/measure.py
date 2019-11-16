@@ -136,6 +136,60 @@ def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
                 orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
     return orient, dzeta
 
+def size_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
+    """
+    Calculate the radial average of the 2D FFT at a set of patches in images in a series.
+
+    Args:
+        data: The source data. Should be in the shape [nt,nx,ny]
+        start (int): First frame to analyse in the series
+        end (int): Last frame to analyse in the series
+        xstep (int): Spacing between patches in the x direction
+        ystep (int): Spacing between patches in the y direction
+        patchw (int): The half width of the patch.
+
+    Returns:
+        Two arrays of shape which describe the principal orientation and orientation magnitude for each patch
+    """
+    w = window_mask(patchw)
+    n_maskQ = angular_binning(patchw,N=100) # NOTE: LOW N FOR TESTING - REMOVE THIS LATER
+
+    nt,nx,ny = data.shape
+
+    gridx = range(patchw,nx-patchw,xstep) # locations of centres of patches in x direction
+    gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
+    if end is None: end = nt # optionally set end time
+
+    # Prepare thre result matrices (3D), first 2 indices are the grid, the last index is time
+    orient = np.nan * np.zeros([end-start,len(gridx),len(gridy)])
+    dzeta  = np.nan * np.zeros([end-start,len(gridx),len(gridy),end-start])
+    Q = np.zeros_like(n_maskQ)
+    Q2 = np.zeros([2,2,nx,ny,nt])
+
+    for t,ti in enumerate(range(start,end)): # Loop on the movie frames
+        for i,xi in enumerate(gridx): # Loop over the grid
+            for j,yj in enumerate(gridy):
+                patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
+
+                if np.std(patch) != 0: patch=(patch - np.mean(patch)) / np.std(patch)
+                else:                  patch=(patch - np.mean(patch))
+
+                S = np.fft.fftshift(np.abs(np.fft.fft2(patch*w) ** 2))
+
+                if np.sum(S) == 0:
+                    Q[:,:,0,0] = Q[:,:,0,1] = Q[:,:,1,0] = Q[:,:,1,1] = S
+                else:
+                    Q[:,:,0,0] = n_maskQ[:,:,0,0].dot(S) / np.sum(S)
+                    Q[:,:,0,1] = n_maskQ[:,:,0,1].dot(S) / np.sum(S)
+                    Q[:,:,1,0] = n_maskQ[:,:,1,0].dot(S) / np.sum(S)
+                    Q[:,:,1,1] = n_maskQ[:,:,1,1].dot(S) / np.sum(S)
+                Q2[:,:,i,j,t] = np.sum(np.sum(Q,0),0)
+                Q2[0,0,i,j,t] -= 0.5
+                Q2[1,1,i,j,t] -= 0.5
+                Q2[:,:,i,j,t] *= np.sqrt(2)
+                orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
+    return orient, dzeta
+
 # Testing area
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
