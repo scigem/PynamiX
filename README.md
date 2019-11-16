@@ -21,7 +21,7 @@ Should be handled in pip install for you. Currently requires:
 - scipy
 - imageio
 
-## Deploying to PyPI
+## Deploying to PyPI (just a reminder for Benjy, please don't try this yourself)
 Run the following to make a new distribution and upload it to PyPI. **Note**: You first need to update the version number in `setup.py`.
 ```
 python3 setup.py sdist
@@ -40,6 +40,7 @@ Once these are built, you can commit and push the changes to github to have them
 ## Roadmap
 
 A sorted implementation list is as follows:
+
     1. Size measurement using the FFT technique
     2. Option to choose between FFT and wavelet transform for size measurement
     3. Wrapper for James's PIV code
