@@ -53,7 +53,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<em>string</em>) – location of SEQ/log file to load. Can be the full path to the SEQ or log file including or excluding the file format.</p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – location of SEQ/log file to load. Can be the full path to the SEQ or log file including or excluding the file format.</p></li>
 <li><p><strong>varian</strong> (<em>bool</em>) – Was this recorded using the Varian software?</p></li>
 </ul>
 </dd>
@@ -70,15 +70,15 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>foldername</strong> (<em>string</em>) – Location to save tiffs into. If this folder does not exist, it will be created for you. including or excluding the file format.</p></li>
+<li><p><strong>foldername</strong> (<em>str</em>) – Location to save tiffs into. If this folder does not exist, it will be created for you. including or excluding the file format.</p></li>
 <li><p><strong>data</strong> (<em>array</em>) – The data loaded as a 3D numpy array with dimensions [nt,nx,ny]</p></li>
-<li><p><strong>vmin</strong> – Minimum value to show in tiff</p></li>
-<li><p><strong>vmax</strong> – Maximum value to show in tiff</p></li>
-<li><p><strong>angle</strong> – Angle in degrees to rotate the images</p></li>
+<li><p><strong>vmin</strong> (<em>int</em>) – Minimum value to show in tiff</p></li>
+<li><p><strong>vmax</strong> (<em>int</em>) – Maximum value to show in tiff</p></li>
+<li><p><strong>angle</strong> (<em>float</em>) – Angle in degrees to rotate the images</p></li>
 <li><p><strong>colour</strong> (<em>bool</em>) – Flag to save the image in colour instead of grayscale</p></li>
 <li><p><strong>logscale</strong> (<em>bool</em>) – Flag to save the image using a logscale for the colours</p></li>
-<li><p><strong>tmin</strong> – First frame to save</p></li>
-<li><p><strong>tmax</strong> – Last frame to save</p></li>
+<li><p><strong>tmin</strong> (<em>int</em>) – First frame to save</p></li>
+<li><p><strong>tmax</strong> (<em>int</em>) – Last frame to save</p></li>
 </ul>
 </dd>
 </dl>
@@ -97,17 +97,20 @@
 <p>n_angle=floor(pi / step_angle)</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>FIXME</p>
+<p>Fix this definition.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>patchw</strong> – The half width of the patch.</p></li>
-<li><p><strong>N</strong> – Number of particle throws per iteration</p></li>
+<li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – Number of particle throws per iteration.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>An array n_maskQ that stores Q(k) coefficients in a 4D table such that Q(kx, ky)=n_maskQ(kx,ky,:,:)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>4D array</p>
 </dd>
 </dl>
 </dd></dl>
@@ -134,11 +137,11 @@
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
-<li><p><strong>start</strong> – First frame to analyse in the series</p></li>
-<li><p><strong>end</strong> – Last frame to analyse in the series</p></li>
-<li><p><strong>xstep</strong> – Spacing between patches in the x direction</p></li>
-<li><p><strong>ystep</strong> – Spacing between patches in the y direction</p></li>
-<li><p><strong>patchw</strong> – The half width of the patch.</p></li>
+<li><p><strong>start</strong> (<em>int</em>) – First frame to analyse in the series</p></li>
+<li><p><strong>end</strong> (<em>int</em>) – Last frame to analyse in the series</p></li>
+<li><p><strong>xstep</strong> (<em>int</em>) – Spacing between patches in the x direction</p></li>
+<li><p><strong>ystep</strong> (<em>int</em>) – Spacing between patches in the y direction</p></li>
+<li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -153,7 +156,7 @@
 <dd><p>Compute a radial hanning window.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>patchw</strong> – The half width of the patch.</p>
+<dd class="field-odd"><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The radial hanning window.</p>

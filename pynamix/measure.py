@@ -2,11 +2,14 @@ import numpy as np
 from scipy.linalg import eig # NOT SURE WHY NUMPY ONE SEG FAULTS
 
 def main_direction(X):
-    '''Calculate the principal orientation and orientation magnitude of a nematic order tensor.
+    """Calculate the principal orientation and orientation magnitude of a nematic order tensor.
 
-    :param X: 2 by 2 array represnting the nematic order tensor.
-    :returns: Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.
-    '''
+    Args:
+        X: 2 by 2 array represnting the nematic order tensor.
+
+    Returns:
+        Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.
+    """
     v,_ = eig(X)
     v = np.real(v) # NOTE: NOT SURE WHY THIS IS NECESSARY
     # idx=np.argmax(V)
@@ -18,11 +21,14 @@ def main_direction(X):
     return angle, dzeta
 
 def window_mask(patchw=32):
-    '''Compute a radial hanning window.
+    """Compute a radial hanning window.
 
-    :param patchw: The half width of the patch.
-    :returns: The radial hanning window.
-    '''
+    Args:
+        patchw (int): The half width of the patch.
+
+    Returns:
+        The radial hanning window.
+    """
     w = np.zeros([patchw*2,patchw*2])
     for i in range(1,patchw * 2):
         for j in range(1,patchw * 2):
@@ -33,7 +39,7 @@ def window_mask(patchw=32):
     return w
 
 def angular_binning(patchw=32,N=10000):
-    '''
+    """
     Use a Monte-Carlo method to compute the individual Q(k) coefficients for equation 4 in `Guillard et al. 2017 <https://www.nature.com/articles/s41598-017-08573-y>`_.
 
     Angular binning definition
@@ -44,12 +50,15 @@ def angular_binning(patchw=32,N=10000):
 
     n_angle=floor(pi / step_angle)
 
-    .. warning:: FIXME
+    .. warning:: Fix this definition.
 
-    :param patchw: The half width of the patch.
-    :param N: Number of particle throws per iteration
-    :returns: An array n_maskQ that stores Q(k) coefficients in a 4D table such that Q(kx, ky)=n_maskQ(kx,ky,:,:)
-    '''
+    Args:
+        patchw (int): The half width of the patch.
+        N (int): Number of particle throws per iteration.
+
+    Returns:
+        4D array: An array n_maskQ that stores Q(k) coefficients in a 4D table such that Q(kx, ky)=n_maskQ(kx,ky,:,:)
+    """
     K = np.zeros([N,2])
     n_nbmaskQ = np.zeros([patchw * 2,patchw * 2])
     n_maskQ   = np.zeros([patchw * 2,patchw * 2,2,2])
@@ -74,17 +83,20 @@ def angular_binning(patchw=32,N=10000):
     return n_maskQ
 
 def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
-    '''
+    """
     Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
 
-    :param data: The source data. Should be in the shape [nt,nx,ny]
-    :param start: First frame to analyse in the series
-    :param end: Last frame to analyse in the series
-    :param xstep: Spacing between patches in the x direction
-    :param ystep: Spacing between patches in the y direction
-    :param patchw: The half width of the patch.
-    :returns: Two arrays of shape which describe the principal orientation and orientation magnitude for each patch
-    '''
+    Args:
+        data: The source data. Should be in the shape [nt,nx,ny]
+        start (int): First frame to analyse in the series
+        end (int): Last frame to analyse in the series
+        xstep (int): Spacing between patches in the x direction
+        ystep (int): Spacing between patches in the y direction
+        patchw (int): The half width of the patch.
+
+    Returns:
+        Two arrays of shape which describe the principal orientation and orientation magnitude for each patch
+    """
     w = window_mask(patchw)
     n_maskQ = angular_binning(patchw,N=100) # NOTE: LOW N FOR TESTING - REMOVE THIS LATER
 
