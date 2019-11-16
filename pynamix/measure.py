@@ -2,6 +2,11 @@ import numpy as np
 from scipy.linalg import eig # NOT SURE WHY NUMPY ONE SEG FAULTS
 
 def main_direction(X):
+    '''Calculate the principal orientation and orientation magnitude of a nematic order tensor.
+
+    :param X: 2 by 2 array represnting the nematic order tensor.
+    :returns: Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.
+    '''
     v,_ = eig(X)
     v = np.real(v) # NOTE: NOT SURE WHY THIS IS NECESSARY
     # idx=np.argmax(V)
@@ -13,7 +18,11 @@ def main_direction(X):
     return angle, dzeta
 
 def window_mask(patchw=32):
-    # Window mask definition: compute a radial hanning window
+    '''Compute a radial hanning window.
+
+    :param patchw: The half width of the patch.
+    :returns: The radial hanning window.
+    '''
     w = np.zeros([patchw*2,patchw*2])
     for i in range(1,patchw * 2):
         for j in range(1,patchw * 2):
@@ -24,14 +33,23 @@ def window_mask(patchw=32):
     return w
 
 def angular_binning(patchw=32,N=10000):
-    # Angular binning definition
-    # step_angle=5 / 180 * pi
-    # bin_angle=range(0 - step_angle / 2,- 180,- step_angle)
-    # n_angle=floor(pi / step_angle)
+    '''
+    Use a Monte-Carlo method to compute the individual Q(k) coefficients for equation 4 in `Guillard et al. 2017 <https://www.nature.com/articles/s41598-017-08573-y>`_.
 
-    # Monte-Carlo method to compute the individual Q(k) coefficients for equation 4.
-    # n_maskQ is a 4D table such as Q(kx, ky)=n_maskQ(kx,ky,:,:)
-    # N is Number of particle throw per iteration (10000 gives a smooth result)
+    Angular binning definition
+
+    step_angle=5 / 180 * pi
+
+    bin_angle=range(0 - step_angle / 2,- 180,- step_angle)
+
+    n_angle=floor(pi / step_angle)
+
+    .. warning:: FIXME
+
+    :param patchw: The half width of the patch.
+    :param N: Number of particle throws per iteration
+    :returns: An array n_maskQ that stores Q(k) coefficients in a 4D table such that Q(kx, ky)=n_maskQ(kx,ky,:,:)
+    '''
     K = np.zeros([N,2])
     n_nbmaskQ = np.zeros([patchw * 2,patchw * 2])
     n_maskQ   = np.zeros([patchw * 2,patchw * 2,2,2])
@@ -39,8 +57,7 @@ def angular_binning(patchw=32,N=10000):
         r = (np.random.rand(N,2) - 0.5) * 2 * patchw
         K[:,0] = r[:,0] / (np.sqrt(r[:,0] ** 2 + r[:,1] ** 2))
         K[:,1] = r[:,1] / (np.sqrt(r[:,0] ** 2 + r[:,1] ** 2))
-        x = np.floor(r + patchw)
-        x = x.astype(np.int)
+        x = np.floor(r + patchw).astype(np.int)
         for i in range(1,N):
             n_nbmaskQ[x[i,1],x[i,0]] += 1
             n_maskQ[x[i,1],x[i,0],0,0] += K[i,0] * K[i,0]
@@ -57,6 +74,17 @@ def angular_binning(patchw=32,N=10000):
     return n_maskQ
 
 def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
+    '''
+    Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
+
+    :param data: The source data. Should be in the shape [nt,nx,ny]
+    :param start: First frame to analyse in the series
+    :param end: Last frame to analyse in the series
+    :param xstep: Spacing between patches in the x direction
+    :param ystep: Spacing between patches in the y direction
+    :param patchw: The half width of the patch.
+    :returns: Two arrays of shape which describe the principal orientation and orientation magnitude for each patch
+    '''
     w = window_mask(patchw)
     n_maskQ = angular_binning(patchw,N=100) # NOTE: LOW N FOR TESTING - REMOVE THIS LATER
 
@@ -67,8 +95,8 @@ def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
     if end is None: end = nt # optionally set end time
 
     # Prepare thre result matrices (3D), first 2 indices are the grid, the last index is time
-    orient = np.nan * np.zeros([len(gridx),len(gridy),end-start])
-    dzeta  = np.nan * np.zeros([len(gridx),len(gridy),end-start])
+    orient = np.nan * np.zeros([end-start,len(gridx),len(gridy)])
+    dzeta  = np.nan * np.zeros([end-start,len(gridx),len(gridy),end-start])
     Q = np.zeros_like(n_maskQ)
     Q2 = np.zeros([2,2,nx,ny,nt])
 
@@ -83,21 +111,17 @@ def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
                 S = np.fft.fftshift(np.abs(np.fft.fft2(patch*w) ** 2))
 
                 if np.sum(S) == 0:
-                    Q[:,:,0,0] = S
-                    Q[:,:,0,1] = S
-                    Q[:,:,1,0] = S
-                    Q[:,:,1,1] = S
+                    Q[:,:,0,0] = Q[:,:,0,1] = Q[:,:,1,0] = Q[:,:,1,1] = S
                 else:
-                    Q[:,:,0,0] = n_maskQ[:,:,0,0].dot(S) / np.sum(np.sum(S))
-                    Q[:,:,0,1] = n_maskQ[:,:,0,1].dot(S) / np.sum(np.sum(S))
-                    Q[:,:,1,0] = n_maskQ[:,:,1,0].dot(S) / np.sum(np.sum(S))
-                    Q[:,:,1,1] = n_maskQ[:,:,1,1].dot(S) / np.sum(np.sum(S))
-                # Q2[:,:,j,i,t] = np.transpose(np.sum(np.sum(Q,0),1), axes=[2,3,0,1])
+                    Q[:,:,0,0] = n_maskQ[:,:,0,0].dot(S) / np.sum(S)
+                    Q[:,:,0,1] = n_maskQ[:,:,0,1].dot(S) / np.sum(S)
+                    Q[:,:,1,0] = n_maskQ[:,:,1,0].dot(S) / np.sum(S)
+                    Q[:,:,1,1] = n_maskQ[:,:,1,1].dot(S) / np.sum(S)
                 Q2[:,:,i,j,t] = np.sum(np.sum(Q,0),0)
                 Q2[0,0,i,j,t] -= 0.5
                 Q2[1,1,i,j,t] -= 0.5
                 Q2[:,:,i,j,t] *= np.sqrt(2)
-                orient[i,j,t],dzeta[i,j,t] = main_direction(Q2[:,:,i,j,t])
+                orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
     return orient, dzeta
 
 # Testing area

@@ -39,6 +39,7 @@
 <li><p><a class="reference internal" href="#io">io</a></p></li>
 <li><p><a class="reference internal" href="#measure">measure</a></p></li>
 <li><p><a class="reference internal" href="#data">data</a></p></li>
+<li><p><a class="reference internal" href="#color">color</a></p></li>
 </ul>
 </dd>
 </dl>
@@ -48,22 +49,146 @@
 <span class="target" id="module-pynamix.io"></span><dl class="function">
 <dt id="pynamix.io.load_seq">
 <code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">varian=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_seq" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load an SEQ file and related logfile</p>
+<dd><p>Load an SEQ file and related logfile, reshaping the file into a 3D array if a logfile is present.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>string</em>) – location of SEQ/log file to load. Can be the full path to the SEQ or log file including or excluding the file format.</p></li>
+<li><p><strong>varian</strong> (<em>bool</em>) – Was this recorded using the Varian software?</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A 3D array with dimensions [nt,nx,ny]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="pynamix.io.save_as_tiffs">
-<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">save_as_tiffs</code><span class="sig-paren">(</span><em class="sig-param">pathname</em>, <em class="sig-param">b</em>, <em class="sig-param">vmin=0</em>, <em class="sig-param">vmax=65535</em>, <em class="sig-param">angle=0</em>, <em class="sig-param">gray=True</em>, <em class="sig-param">logscale=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.save_as_tiffs" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">save_as_tiffs</code><span class="sig-paren">(</span><em class="sig-param">foldername</em>, <em class="sig-param">data</em>, <em class="sig-param">vmin=0</em>, <em class="sig-param">vmax=65535</em>, <em class="sig-param">angle=0</em>, <em class="sig-param">colour=False</em>, <em class="sig-param">logscale=False</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.save_as_tiffs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>foldername</strong> (<em>string</em>) – Location to save tiffs into. If this folder does not exist, it will be created for you. including or excluding the file format.</p></li>
+<li><p><strong>data</strong> (<em>array</em>) – The data loaded as a 3D numpy array with dimensions [nt,nx,ny]</p></li>
+<li><p><strong>vmin</strong> – Minimum value to show in tiff</p></li>
+<li><p><strong>vmax</strong> – Maximum value to show in tiff</p></li>
+<li><p><strong>angle</strong> – Angle in degrees to rotate the images</p></li>
+<li><p><strong>colour</strong> (<em>bool</em>) – Flag to save the image in colour instead of grayscale</p></li>
+<li><p><strong>logscale</strong> (<em>bool</em>) – Flag to save the image using a logscale for the colours</p></li>
+<li><p><strong>tmin</strong> – First frame to save</p></li>
+<li><p><strong>tmax</strong> – Last frame to save</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
 <div class="section" id="measure">
 <span id="id2"></span><h1>Measure<a class="headerlink" href="#measure" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-pynamix.measure"></span></div>
+<span class="target" id="module-pynamix.measure"></span><dl class="function">
+<dt id="pynamix.measure.angular_binning">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">angular_binning</code><span class="sig-paren">(</span><em class="sig-param">patchw=32</em>, <em class="sig-param">N=10000</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.angular_binning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use a Monte-Carlo method to compute the individual Q(k) coefficients for equation 4 in <a class="reference external" href="https://www.nature.com/articles/s41598-017-08573-y">Guillard et al. 2017</a>.</p>
+<p>Angular binning definition</p>
+<p>step_angle=5 / 180 * pi</p>
+<p>bin_angle=range(0 - step_angle / 2,- 180,- step_angle)</p>
+<p>n_angle=floor(pi / step_angle)</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>FIXME</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patchw</strong> – The half width of the patch.</p></li>
+<li><p><strong>N</strong> – Number of particle throws per iteration</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An array n_maskQ that stores Q(k) coefficients in a 4D table such that Q(kx, ky)=n_maskQ(kx,ky,:,:)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.measure.main_direction">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">main_direction</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.main_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the principal orientation and orientation magnitude of a nematic order tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> – 2 by 2 array represnting the nematic order tensor.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.measure.orientation_map">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">orientation_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">start=0</em>, <em class="sig-param">end=None</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.orientation_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
+<li><p><strong>start</strong> – First frame to analyse in the series</p></li>
+<li><p><strong>end</strong> – Last frame to analyse in the series</p></li>
+<li><p><strong>xstep</strong> – Spacing between patches in the x direction</p></li>
+<li><p><strong>ystep</strong> – Spacing between patches in the y direction</p></li>
+<li><p><strong>patchw</strong> – The half width of the patch.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Two arrays of shape which describe the principal orientation and orientation magnitude for each patch</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.measure.window_mask">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">window_mask</code><span class="sig-paren">(</span><em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.window_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a radial hanning window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>patchw</strong> – The half width of the patch.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The radial hanning window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="data">
 <span id="id3"></span><h1>Data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-pynamix.data"></span></div>
+<span class="target" id="module-pynamix.data"></span><dl class="function">
+<dt id="pynamix.data.radiographs">
+<code class="sig-prename descclassname">pynamix.data.</code><code class="sig-name descname">radiographs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.data.radiographs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the default dataset of a pendulum swinging, recorded on a DEXELA detector at 4x4 binnging (see the logfile for more information)</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>THIS DATA DOES NOT EXIST YET</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="color">
+<span id="id4"></span><h1>Color<a class="headerlink" href="#color" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-pynamix.color"></span><dl class="function">
+<dt id="pynamix.color.virino">
+<code class="sig-prename descclassname">pynamix.color.</code><code class="sig-name descname">virino</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.color.virino" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the virino colormap, useful for plotting the angular data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The virino colormap</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
@@ -108,14 +233,6 @@
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
-
         </div>
       </div>
       <div class="clearer"></div>
@@ -124,8 +241,8 @@
       &copy;2019, Benjy Marks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/index.rst.txt"

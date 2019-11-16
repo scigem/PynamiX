@@ -5,11 +5,17 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.cm import inferno
 from imageio import imwrite
 
-def load_seq(filename,varian=False,mode=0):
-    '''
-    Load an SEQ file and related logfile, reshaping the file into a 3D array if a logfile is present.
+def load_seq(filename,varian=False):
+    '''Load an SEQ file and related logfile, reshaping the file into a 3D array if a logfile is present.
+
+    :param filename: location of SEQ/log file to load. Can be the full path to the SEQ or log file including or excluding the file format.
+    :type filename: string
+    :param varian: Was this recorded using the Varian software?
+    :type varian: bool
+    :returns: A 3D array with dimensions [nt,nx,ny]
     '''
     if filename[-3:] == 'seq': filename = filename[:-4] # strip seq file ending if present
+    elif filename[-3:] == 'log': filename = filename[:-4] # strip seq file ending if present
 
     with open(filename + '.seq','rb') as f:
         if varian:
@@ -46,8 +52,21 @@ def load_seq(filename,varian=False,mode=0):
     return data, logfile
 
 def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,logscale=False,tmin=0,tmax=None,tstep=1):
-    '''
-    Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.
+    '''Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.
+
+    :param foldername: Location to save tiffs into. If this folder does not exist, it will be created for you. including or excluding the file format.
+    :type foldername: string
+    :param data: The data loaded as a 3D numpy array with dimensions [nt,nx,ny]
+    :type data: array
+    :param vmin: Minimum value to show in tiff
+    :param vmax: Maximum value to show in tiff
+    :param angle: Angle in degrees to rotate the images
+    :param colour: Flag to save the image in colour instead of grayscale
+    :type colour: bool
+    :param logscale: Flag to save the image using a logscale for the colours
+    :type logscale: bool
+    :param tmin: First frame to save
+    :param tmax: Last frame to save
     '''
     nt = data.shape[0]
     if tmax == None: tmax = nt

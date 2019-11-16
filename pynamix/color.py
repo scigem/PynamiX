@@ -1,6 +1,11 @@
 from matplotlib.colors import LinearSegmentedColormap
 
 def virino():
+    '''
+    Defines the virino colormap, useful for plotting the angular data.
+
+    :returns: The virino colormap
+    '''
     virino_list =   [[9.8857443e-01,   9.9435500e-01,   6.2314191e-01],
        [9.8899847e-01,   9.8635272e-01,   5.7966316e-01],
        [9.8942251e-01,   9.7835044e-01,   5.3618441e-01],
