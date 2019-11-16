@@ -3,18 +3,23 @@
 [Documentation here](https://pages.github.sydney.edu.au/scigem/pynamix/build/html/index.html)
 
 ## Installation
-Work in progress. Hopefully via `pip install pynamix` but YMMV.
+Work in progress. Hopefully via `pip install pynamix` but YMMV. If installing from github, try cloning and then running:
+```
+python3 setup.py build
+python3 setup.py install
+```
+If you make any changes to the source code, re-run those two lines to have your changes reflected in your installed package.
 
 ## Examples
 Try out the included Jupyter notebook to see how to use the package.
 
 ## Dependencies
-Work in progress - should be handled in pip install. Currently requires:
-```
-python3
-matplotlib
-numpy
-```
+Should be handled in pip install for you. Currently requires:
+- python3
+- matplotlib
+- numpy
+- scipy
+- imageio
 
 ## Deploying to PyPI
 Run the following to make a new distribution and upload it to PyPI
