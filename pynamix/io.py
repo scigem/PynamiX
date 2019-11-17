@@ -96,7 +96,7 @@ def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,logscal
             plt.axis('off')
             plt.savefig(foldername + '/' + str(t).zfill(5) + '.tiff',dpi=72)
 
-def load_PIVLab_txtfiles(foldername):
+def load_PIVLab_txtfiles(foldername,start=0,end=None,tstep=1):
     '''Load a folder full of PIVLab txtfiles and return the data as a series of arrays
 
     Args:
@@ -105,8 +105,8 @@ def load_PIVLab_txtfiles(foldername):
     Returns:
         4 element tuple containing
 
-        - x (1D array): The `x` location of each patch
-        - y (1D array): The `y` location of each patch
+        - X (2D array): The `x` location of each patch
+        - Y (2D array): The `y` location of each patch
         - u (3D array): The horizontal velocity of each patch. Has the shape [nt,nx,y].
         - v (3D array): The vertical velocity of each patch. Has the shape [nt,nx,y].
     '''
@@ -114,14 +114,16 @@ def load_PIVLab_txtfiles(foldername):
     files = glob.glob(foldername + '/*.txt')
     files = sorted(files)
     nt = len(files)
-    for i,f in enumerate(files):
+    if end == None: end = nt
+
+    for i,f in enumerate(files[start:end:tstep]):
         data = np.loadtxt(f,skiprows=3,delimiter=',')
         if i == 0:
-            np = data.shape[0] # number of data points in total
+            npoints = data.shape[0] # number of data points in total
             x_all = data[:,0]
             y_all = data[:,1]
-            u = np.zeros([nt,np])
-            v = np.zeros([nt,np])
+            u = np.zeros([nt,npoints])
+            v = np.zeros([nt,npoints])
         # elif i % 500 == 0: print('Up to file ' + str(i))
         u[i] = data[:,2]
         v[i] = data[:,3]
@@ -132,11 +134,16 @@ def load_PIVLab_txtfiles(foldername):
     ny = len(y)
     u = u.reshape([nt,nx,ny])
     v = v.reshape([nt,nx,ny])
+    X,Y = np.meshgrid(x,y,indexing='ij')
 
-    return x,y,u,v
+    return X,Y,u,v
 
 # Testing area
 if __name__ == '__main__':
     from pynamix.data import radiographs
-    data,logfile = radiographs()
-    save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
+    # data,logfile = radiographs()
+    # save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
+
+    # x,y,u,v = load_PIVLab_txtfiles('/Volumes/LTS/DynamiX/PerpetualAvalanche/PerpetualAvalanche-3mm-4mm-80-20/PIV/',start=1000,end=1020,tstep=5)
+    # plt.quiver(x,y,u[0,:,:],v[0,:,:])
+    # plt.show()

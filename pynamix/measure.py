@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import eig # NOT SURE WHY NUMPY ONE SEG FAULTS
 
-def main_direction(X):
+def main_direction(tensor):
     """Calculate the principal orientation and orientation magnitude of a nematic order tensor.
 
     Args:
@@ -10,14 +10,14 @@ def main_direction(X):
     Returns:
         Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.
     """
-    v,_ = eig(X)
+    v,_ = eig(tensor)
     v = np.real(v) # NOTE: NOT SURE WHY THIS IS NECESSARY
     # idx=np.argmax(V)
     # print(v))
     angle=np.arctan2(v[1],v[0]) # HACK: CHECK THIS!!!!!
     if (angle < 0): angle=angle + np.pi
     elif (angle > np.pi): angle=angle - np.pi
-    dzeta=np.sqrt(np.sum(X ** 2))
+    dzeta=np.sqrt(np.sum(tensor ** 2))
     return angle, dzeta
 
 def window_mask(patchw=32):
@@ -190,7 +190,7 @@ def size_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
                 Q2[1,1,i,j,t] -= 0.5
                 Q2[:,:,i,j,t] *= np.sqrt(2)
                 orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
-    return orient, dzeta
+    return size
 
 # Testing area
 if __name__ == '__main__':
@@ -228,10 +228,14 @@ if __name__ == '__main__':
     from pynamix.data import radiographs
     data,logfile = radiographs()
     orient, dzeta = orientation_map(data,start=1000,end=1002)
+    # size = size_map(data,start=1000,end=1002)
 
-    plt.subplot(121)
+    plt.subplot(131)
     plt.imshow(data[1000])
-    plt.subplot(122)
+    plt.subplot(132)
     plt.pcolormesh(orient[:,:,0])
     plt.colorbar()
+    # plt.subplot(133)
+    # plt.pcolormesh(size[:,:,0])
+    # plt.colorbar()
     plt.show()
