@@ -82,7 +82,7 @@ def angular_binning(patchw=32,N=10000):
 
     return n_maskQ
 
-def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
+def orientation_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
     """
     Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
 
@@ -90,6 +90,7 @@ def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
         data: The source data. Should be in the shape [nt,nx,ny]
         start (int): First frame to analyse in the series
         end (int): Last frame to analyse in the series
+        tstep (int): Spacing between frames to analyse
         xstep (int): Spacing between patches in the x direction
         ystep (int): Spacing between patches in the y direction
         patchw (int): The half width of the patch.
@@ -112,7 +113,7 @@ def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
     Q = np.zeros_like(n_maskQ)
     Q2 = np.zeros([2,2,nx,ny,nt])
 
-    for t,ti in enumerate(range(start,end)): # Loop on the movie frames
+    for t,ti in enumerate(range(start,end,tstep)): # Loop on the movie frames
         for i,xi in enumerate(gridx): # Loop over the grid
             for j,yj in enumerate(gridy):
                 patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
@@ -136,7 +137,7 @@ def orientation_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
                 orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
     return orient, dzeta
 
-def size_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
+def size_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
     """
     Calculate the radial average of the 2D FFT at a set of patches in images in a series.
 
@@ -144,6 +145,7 @@ def size_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
         data: The source data. Should be in the shape [nt,nx,ny]
         start (int): First frame to analyse in the series
         end (int): Last frame to analyse in the series
+        tstep (int): Spacing between frames to analyse
         xstep (int): Spacing between patches in the x direction
         ystep (int): Spacing between patches in the y direction
         patchw (int): The half width of the patch.
@@ -166,7 +168,7 @@ def size_map(data,start=0,end=None,xstep=32,ystep=32,patchw=32):
     Q = np.zeros_like(n_maskQ)
     Q2 = np.zeros([2,2,nx,ny,nt])
 
-    for t,ti in enumerate(range(start,end)): # Loop on the movie frames
+    for t,ti in enumerate(range(start,end,tstep)): # Loop on the movie frames
         for i,xi in enumerate(gridx): # Loop over the grid
             for j,yj in enumerate(gridy):
                 patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]

@@ -104,7 +104,7 @@ def load_PIVLab_txtfiles(foldername):
 
     Returns:
         4 element tuple containing
-        
+
         - x (1D array): The `x` location of each patch
         - y (1D array): The `y` location of each patch
         - u (3D array): The horizontal velocity of each patch. Has the shape [nt,nx,y].
@@ -126,8 +126,8 @@ def load_PIVLab_txtfiles(foldername):
         u[i] = data[:,2]
         v[i] = data[:,3]
 
-    x = unique(x_all)
-    y = unique(y_all)
+    x = np.unique(x_all)
+    y = np.unique(y_all)
     nx = len(x)
     ny = len(y)
     u = u.reshape([nt,nx,ny])
