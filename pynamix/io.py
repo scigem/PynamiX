@@ -140,8 +140,8 @@ def load_PIVLab_txtfiles(foldername,start=0,end=None,tstep=1):
 
 # Testing area
 if __name__ == '__main__':
-    from pynamix.data import radiographs
-    # data,logfile = radiographs()
+    from pynamix.data import pendulum
+    # data,logfile = pendulum()
     # save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
 
     # x,y,u,v = load_PIVLab_txtfiles('/Volumes/LTS/DynamiX/PerpetualAvalanche/PerpetualAvalanche-3mm-4mm-80-20/PIV/',start=1000,end=1020,tstep=5)

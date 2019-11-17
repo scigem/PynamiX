@@ -48,7 +48,7 @@
 <span id="id1"></span><h1>IO<a class="headerlink" href="#io" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-pynamix.io"></span><dl class="function">
 <dt id="pynamix.io.load_PIVLab_txtfiles">
-<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_PIVLab_txtfiles</code><span class="sig-paren">(</span><em class="sig-param">foldername</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_PIVLab_txtfiles" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_PIVLab_txtfiles</code><span class="sig-paren">(</span><em class="sig-param">foldername</em>, <em class="sig-param">start=0</em>, <em class="sig-param">end=None</em>, <em class="sig-param">tstep=1</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_PIVLab_txtfiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a folder full of PIVLab txtfiles and return the data as a series of arrays</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -57,8 +57,8 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><p>4 element tuple containing</p>
 <ul class="simple">
-<li><p>x (1D array): The <cite>x</cite> location of each patch</p></li>
-<li><p>y (1D array): The <cite>y</cite> location of each patch</p></li>
+<li><p>X (2D array): The <cite>x</cite> location of each patch</p></li>
+<li><p>Y (2D array): The <cite>y</cite> location of each patch</p></li>
 <li><p>u (3D array): The horizontal velocity of each patch. Has the shape [nt,nx,y].</p></li>
 <li><p>v (3D array): The vertical velocity of each patch. Has the shape [nt,nx,y].</p></li>
 </ul>
@@ -138,7 +138,7 @@
 
 <dl class="function">
 <dt id="pynamix.measure.main_direction">
-<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">main_direction</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.main_direction" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">main_direction</code><span class="sig-paren">(</span><em class="sig-param">tensor</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.main_direction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the principal orientation and orientation magnitude of a nematic order tensor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -152,7 +152,7 @@
 
 <dl class="function">
 <dt id="pynamix.measure.orientation_map">
-<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">orientation_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">start=0</em>, <em class="sig-param">end=None</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.orientation_map" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">orientation_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">start=0</em>, <em class="sig-param">end=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.orientation_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -160,6 +160,7 @@
 <li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
 <li><p><strong>start</strong> (<em>int</em>) – First frame to analyse in the series</p></li>
 <li><p><strong>end</strong> (<em>int</em>) – Last frame to analyse in the series</p></li>
+<li><p><strong>tstep</strong> (<em>int</em>) – Spacing between frames to analyse</p></li>
 <li><p><strong>xstep</strong> (<em>int</em>) – Spacing between patches in the x direction</p></li>
 <li><p><strong>ystep</strong> (<em>int</em>) – Spacing between patches in the y direction</p></li>
 <li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
@@ -173,7 +174,7 @@
 
 <dl class="function">
 <dt id="pynamix.measure.size_map">
-<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">size_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">start=0</em>, <em class="sig-param">end=None</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.size_map" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">size_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">start=0</em>, <em class="sig-param">end=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.size_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the radial average of the 2D FFT at a set of patches in images in a series.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -181,6 +182,7 @@
 <li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
 <li><p><strong>start</strong> (<em>int</em>) – First frame to analyse in the series</p></li>
 <li><p><strong>end</strong> (<em>int</em>) – Last frame to analyse in the series</p></li>
+<li><p><strong>tstep</strong> (<em>int</em>) – Spacing between frames to analyse</p></li>
 <li><p><strong>xstep</strong> (<em>int</em>) – Spacing between patches in the x direction</p></li>
 <li><p><strong>ystep</strong> (<em>int</em>) – Spacing between patches in the y direction</p></li>
 <li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
@@ -210,8 +212,8 @@
 <div class="section" id="data">
 <span id="id3"></span><h1>Data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-pynamix.data"></span><dl class="function">
-<dt id="pynamix.data.radiographs">
-<code class="sig-prename descclassname">pynamix.data.</code><code class="sig-name descname">radiographs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.data.radiographs" title="Permalink to this definition">¶</a></dt>
+<dt id="pynamix.data.pendulum">
+<code class="sig-prename descclassname">pynamix.data.</code><code class="sig-name descname">pendulum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.data.pendulum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the default dataset of a pendulum swinging, recorded on a DEXELA detector at 4x4 binnging (see the logfile for more information)</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -278,6 +280,14 @@
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
@@ -286,8 +296,8 @@
       &copy;2019, Benjy Marks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="_sources/index.rst.txt"
