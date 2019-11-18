@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Welcome to PynamiX’s documentation! &#8212; PynamiX 0.0.1 documentation</title>
+    <title>Welcome to PynamiX’s documentation! &#8212; PynamiX 0.0.3 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -40,7 +40,7 @@
 <li><p><a class="reference internal" href="#measure">measure</a></p></li>
 <li><p><a class="reference internal" href="#data">data</a></p></li>
 <li><p><a class="reference internal" href="#color">color</a></p></li>
-<li><p><a class="reference internal" href="#filter">filter</a></p></li>
+<li><p><a class="reference internal" href="#exposure">exposure</a></p></li>
 </ul>
 </dd>
 </dl>
@@ -48,6 +48,63 @@
 <div class="section" id="io">
 <span id="id1"></span><h1>IO<a class="headerlink" href="#io" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-pynamix.io"></span><dl class="function">
+<dt id="pynamix.io.load_seq">
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">varian=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load an SEQ file and related logfile, reshaping the file into a 3D array if a logfile is present.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – location of SEQ/log file to load. Can be the full path to the SEQ or log file including or excluding the file format.</p></li>
+<li><p><strong>varian</strong> (<em>bool</em>) – Was this recorded using the Varian software?</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A 3D array with dimensions [nt,nx,ny]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.io.write_seq">
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">write_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">data</em>, <em class="sig-param">logfile</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.write_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an SEQ file and corresponding logfile from a 3D numpy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – The name of the SEQ file to write.</p></li>
+<li><p><strong>data</strong> (<em>array</em>) – The data to write.</p></li>
+<li><p><strong>logfile</strong> – The original logfile of the source data.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>FRANCOIS DO THIS</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.io.save_as_tiffs">
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">save_as_tiffs</code><span class="sig-paren">(</span><em class="sig-param">foldername</em>, <em class="sig-param">data</em>, <em class="sig-param">vmin=0</em>, <em class="sig-param">vmax=65535</em>, <em class="sig-param">angle=0</em>, <em class="sig-param">colour=False</em>, <em class="sig-param">logscale=False</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.save_as_tiffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>foldername</strong> (<em>str</em>) – Location to save tiffs into. If this folder does not exist, it will be created for you. including or excluding the file format.</p></li>
+<li><p><strong>data</strong> (<em>array</em>) – The data loaded as a 3D numpy array with dimensions [nt,nx,ny]</p></li>
+<li><p><strong>vmin</strong> (<em>int</em>) – Minimum value to show in tiff</p></li>
+<li><p><strong>vmax</strong> (<em>int</em>) – Maximum value to show in tiff</p></li>
+<li><p><strong>angle</strong> (<em>float</em>) – Angle in degrees to rotate the images</p></li>
+<li><p><strong>colour</strong> (<em>bool</em>) – Flag to save the image in colour instead of grayscale</p></li>
+<li><p><strong>logscale</strong> (<em>bool</em>) – Flag to save the image using a logscale for the colours</p></li>
+<li><p><strong>tmin</strong> (<em>int</em>) – First frame to save</p></li>
+<li><p><strong>tmax</strong> (<em>int</em>) – Last frame to save</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pynamix.io.load_PIVLab_txtfiles">
 <code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_PIVLab_txtfiles</code><span class="sig-paren">(</span><em class="sig-param">foldername</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_PIVLab_txtfiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a folder full of PIVLab txtfiles and return the data as a series of arrays</p>
@@ -73,67 +130,38 @@
 </dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="pynamix.io.load_seq">
-<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">varian=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_seq" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load an SEQ file and related logfile, reshaping the file into a 3D array if a logfile is present.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<em>str</em>) – location of SEQ/log file to load. Can be the full path to the SEQ or log file including or excluding the file format.</p></li>
-<li><p><strong>varian</strong> (<em>bool</em>) – Was this recorded using the Varian software?</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A 3D array with dimensions [nt,nx,ny]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="pynamix.io.save_as_tiffs">
-<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">save_as_tiffs</code><span class="sig-paren">(</span><em class="sig-param">foldername</em>, <em class="sig-param">data</em>, <em class="sig-param">vmin=0</em>, <em class="sig-param">vmax=65535</em>, <em class="sig-param">angle=0</em>, <em class="sig-param">colour=False</em>, <em class="sig-param">logscale=False</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.save_as_tiffs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>foldername</strong> (<em>str</em>) – Location to save tiffs into. If this folder does not exist, it will be created for you. including or excluding the file format.</p></li>
-<li><p><strong>data</strong> (<em>array</em>) – The data loaded as a 3D numpy array with dimensions [nt,nx,ny]</p></li>
-<li><p><strong>vmin</strong> (<em>int</em>) – Minimum value to show in tiff</p></li>
-<li><p><strong>vmax</strong> (<em>int</em>) – Maximum value to show in tiff</p></li>
-<li><p><strong>angle</strong> (<em>float</em>) – Angle in degrees to rotate the images</p></li>
-<li><p><strong>colour</strong> (<em>bool</em>) – Flag to save the image in colour instead of grayscale</p></li>
-<li><p><strong>logscale</strong> (<em>bool</em>) – Flag to save the image using a logscale for the colours</p></li>
-<li><p><strong>tmin</strong> (<em>int</em>) – First frame to save</p></li>
-<li><p><strong>tmax</strong> (<em>int</em>) – Last frame to save</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="pynamix.io.write_seq">
-<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">write_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">data</em>, <em class="sig-param">logfile</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.write_seq" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write an SEQ file and corresponding logfile from a 3D numpy array.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<em>str</em>) – The name of the SEQ file to write.</p></li>
-<li><p><strong>data</strong> (<em>array</em>) – The data to write.</p></li>
-<li><p><strong>logfile</strong> – The original logfile of the source data.</p></li>
-</ul>
-</dd>
-</dl>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>FRANCOIS DO THIS</p>
-</div>
-</dd></dl>
-
 </div>
 <div class="section" id="measure">
 <span id="id2"></span><h1>Measure<a class="headerlink" href="#measure" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-pynamix.measure"></span><dl class="function">
+<dt id="pynamix.measure.main_direction">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">main_direction</code><span class="sig-paren">(</span><em class="sig-param">tensor</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.main_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the principal orientation and orientation magnitude of a nematic order tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tensor</strong> – 2 by 2 array represnting the nematic order tensor.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.measure.hanning_window">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">hanning_window</code><span class="sig-paren">(</span><em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.hanning_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a radial hanning window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The radial hanning window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pynamix.measure.angular_binning">
 <code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">angular_binning</code><span class="sig-paren">(</span><em class="sig-param">patchw=32</em>, <em class="sig-param">N=10000</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.angular_binning" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use a Monte-Carlo method to compute the individual Q(k) coefficients for equation 4 in <a class="reference external" href="https://www.nature.com/articles/s41598-017-08573-y">Guillard et al. 2017</a>.</p>
@@ -157,34 +185,6 @@
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>4D array</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="pynamix.measure.hanning_window">
-<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">hanning_window</code><span class="sig-paren">(</span><em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.hanning_window" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute a radial hanning window.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The radial hanning window.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="pynamix.measure.main_direction">
-<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">main_direction</code><span class="sig-paren">(</span><em class="sig-param">tensor</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.main_direction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the principal orientation and orientation magnitude of a nematic order tensor.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tensor</strong> – 2 by 2 array represnting the nematic order tensor.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -261,11 +261,11 @@
 </dd></dl>
 
 </div>
-<div class="section" id="filter">
-<span id="id5"></span><h1>Filter<a class="headerlink" href="#filter" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-pynamix.filter"></span><dl class="function">
-<dt id="pynamix.filter.mean_std">
-<code class="sig-prename descclassname">pynamix.filter.</code><code class="sig-name descname">mean_std</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.filter.mean_std" title="Permalink to this definition">¶</a></dt>
+<div class="section" id="exposure">
+<span id="id5"></span><h1>Exposure<a class="headerlink" href="#exposure" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-pynamix.exposure"></span><dl class="function">
+<dt id="pynamix.exposure.mean_std">
+<code class="sig-prename descclassname">pynamix.exposure.</code><code class="sig-name descname">mean_std</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.exposure.mean_std" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normalise an image such that it has zero mean and standard deviation of one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -281,8 +281,8 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="pynamix.filter.no_normalisation">
-<code class="sig-prename descclassname">pynamix.filter.</code><code class="sig-name descname">no_normalisation</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.filter.no_normalisation" title="Permalink to this definition">¶</a></dt>
+<dt id="pynamix.exposure.no_normalisation">
+<code class="sig-prename descclassname">pynamix.exposure.</code><code class="sig-name descname">no_normalisation</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.exposure.no_normalisation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Do not normalise the input image.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -342,14 +342,6 @@
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
-
         </div>
       </div>
       <div class="clearer"></div>
@@ -358,8 +350,8 @@
       &copy;2019, Benjy Marks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/index.rst.txt"

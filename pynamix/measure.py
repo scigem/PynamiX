@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import eig # NOT SURE WHY NUMPY ONE SEG FAULTS
-from pynamix.filter import *
+from pynamix.exposure import *
 
 def main_direction(tensor):
     """Calculate the principal orientation and orientation magnitude of a nematic order tensor.

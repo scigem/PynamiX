@@ -16,7 +16,7 @@ This code is made up of the following modules:
     * `measure`_
     * `data`_
     * `color`_
-    * `filter`_
+    * `exposure`_
 
 .. _io:
 
@@ -50,12 +50,12 @@ Color
 .. automodule:: pynamix.color
   :members:
 
-.. _filter:
+.. _exposure:
 
-Filter
+Exposure
 ==========================
 
-.. automodule:: pynamix.filter
+.. automodule:: pynamix.exposure
   :members:
 
 
