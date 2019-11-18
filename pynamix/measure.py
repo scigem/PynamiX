@@ -82,14 +82,14 @@ def angular_binning(patchw=32,N=10000):
 
     return n_maskQ
 
-def orientation_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
+def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
     """
     Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
 
     Args:
         data: The source data. Should be in the shape [nt,nx,ny]
-        start (int): First frame to analyse in the series
-        end (int): Last frame to analyse in the series
+        tmin (int): First frame to analyse in the series
+        tmax (int): Last frame to analyse in the series
         tstep (int): Spacing between frames to analyse
         xstep (int): Spacing between patches in the x direction
         ystep (int): Spacing between patches in the y direction
@@ -105,15 +105,15 @@ def orientation_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
 
     gridx = range(patchw,nx-patchw,xstep) # locations of centres of patches in x direction
     gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
-    if end is None: end = nt # optionally set end time
+    if tmax is None: tmax = nt # optionally set end time
 
     # Prepare thre result matrices (3D), first 2 indices are the grid, the last index is time
-    orient = np.nan * np.zeros([end-start,len(gridx),len(gridy)])
-    dzeta  = np.nan * np.zeros([end-start,len(gridx),len(gridy),end-start])
+    orient = np.nan * np.zeros([tmax-tmin,len(gridx),len(gridy)])
+    dzeta  = np.nan * np.zeros([tmax-tmin,len(gridx),len(gridy)])
     Q = np.zeros_like(n_maskQ)
     Q2 = np.zeros([2,2,nx,ny,nt])
 
-    for t,ti in enumerate(range(start,end,tstep)): # Loop on the movie frames
+    for t,ti in enumerate(range(tmin,tmax,tstep)): # Loop on the movie frames
         for i,xi in enumerate(gridx): # Loop over the grid
             for j,yj in enumerate(gridy):
                 patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
@@ -137,14 +137,14 @@ def orientation_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
                 orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
     return orient, dzeta
 
-def size_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
+def size_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
     """
     Calculate the radial average of the 2D FFT at a set of patches in images in a series.
 
     Args:
         data: The source data. Should be in the shape [nt,nx,ny]
-        start (int): First frame to analyse in the series
-        end (int): Last frame to analyse in the series
+        tmin (int): First frame to analyse in the series
+        tmax (int): Last frame to analyse in the series
         tstep (int): Spacing between frames to analyse
         xstep (int): Spacing between patches in the x direction
         ystep (int): Spacing between patches in the y direction
@@ -160,15 +160,15 @@ def size_map(data,start=0,end=None,tstep=1,xstep=32,ystep=32,patchw=32):
 
     gridx = range(patchw,nx-patchw,xstep) # locations of centres of patches in x direction
     gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
-    if end is None: end = nt # optionally set end time
+    if tmax is None: tmax = nt # optionally set end time
 
     # Prepare thre result matrices (3D), first 2 indices are the grid, the last index is time
-    orient = np.nan * np.zeros([end-start,len(gridx),len(gridy)])
-    dzeta  = np.nan * np.zeros([end-start,len(gridx),len(gridy),end-start])
+    orient = np.nan * np.zeros([tmax-tmin,len(gridx),len(gridy)])
+    dzeta  = np.nan * np.zeros([tmax-tmin,len(gridx),len(gridy)])
     Q = np.zeros_like(n_maskQ)
     Q2 = np.zeros([2,2,nx,ny,nt])
 
-    for t,ti in enumerate(range(start,end,tstep)): # Loop on the movie frames
+    for t,ti in enumerate(range(tmin,tmax,tstep)): # Loop on the movie frames
         for i,xi in enumerate(gridx): # Loop over the grid
             for j,yj in enumerate(gridy):
                 patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
@@ -227,8 +227,8 @@ if __name__ == '__main__':
 
     from pynamix.data import radiographs
     data,logfile = radiographs()
-    orient, dzeta = orientation_map(data,start=1000,end=1002)
-    # size = size_map(data,start=1000,end=1002)
+    orient, dzeta = orientation_map(data,tmin=1000,tmax=1002)
+    # size = size_map(data,tmin=1000,tmax=1002)
 
     plt.subplot(131)
     plt.imshow(data[1000])

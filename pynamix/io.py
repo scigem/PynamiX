@@ -96,11 +96,14 @@ def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,logscal
             plt.axis('off')
             plt.savefig(foldername + '/' + str(t).zfill(5) + '.tiff',dpi=72)
 
-def load_PIVLab_txtfiles(foldername,start=0,end=None,tstep=1):
+def load_PIVLab_txtfiles(foldername,tmin=0,tmax=None,tstep=1):
     '''Load a folder full of PIVLab txtfiles and return the data as a series of arrays
 
     Args:
         foldername (str): Name of the folder that contains the text files to load.
+        tmin (int): First textfile to load
+        tmax (int): Last textfile to load
+        tstep (int): Spacing between textfiles to load
 
     Returns:
         4 element tuple containing
@@ -116,7 +119,7 @@ def load_PIVLab_txtfiles(foldername,start=0,end=None,tstep=1):
     nt = len(files)
     if end == None: end = nt
 
-    for i,f in enumerate(files[start:end:tstep]):
+    for i,f in enumerate(files[tmin:tmax:tstep]):
         data = np.loadtxt(f,skiprows=3,delimiter=',')
         if i == 0:
             npoints = data.shape[0] # number of data points in total
@@ -144,6 +147,6 @@ if __name__ == '__main__':
     # data,logfile = pendulum()
     # save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
 
-    # x,y,u,v = load_PIVLab_txtfiles('/Volumes/LTS/DynamiX/PerpetualAvalanche/PerpetualAvalanche-3mm-4mm-80-20/PIV/',start=1000,end=1020,tstep=5)
+    # x,y,u,v = load_PIVLab_txtfiles('/Volumes/LTS/DynamiX/PerpetualAvalanche/PerpetualAvalanche-3mm-4mm-80-20/PIV/',tmin=1000,tmax=1020,tstep=5)
     # plt.quiver(x,y,u[0,:,:],v[0,:,:])
     # plt.show()
