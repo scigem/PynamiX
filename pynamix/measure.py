@@ -98,7 +98,7 @@ def radial_grid(rnb=200,patchw=32,N=10000): # validated against MATLAB code
     for i in range(rnb):
         nr_pxr[:,:,i] /= nr_px
     r_grid += np.mean(np.diff(r_grid))*0.5
-    return r_grid
+    return r_grid, nr_pxr
 
 def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
     """
@@ -154,7 +154,7 @@ def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,no
                 orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
     return orient, dzeta
 
-def size_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
+def size_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
     """
     Calculate the radial average of the 2D FFT at a set of patches in images in a series.
 
@@ -179,18 +179,20 @@ def size_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
     gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
     if tmax is None: tmax = nt # optionally set end time
 
-    frequencyconversion=(sz[2])/244/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength). 244 is the heigth of the detector in mm.
-    radialspec=zeros([tmax-tmin,length(gridx), length(gridy), rnb]) #
+    frequencyconversion=logfile['resolution']/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength)
+    radialspec=zeros([(tmax-tmin)//tstep,length(gridx), length(gridy), rnb]) #
+
+    r_grid, nr_pxr = radial_grid(rnb=rnb,patchw=patchw)
 
     for t,ti in enumerate(range(tmin,tmax,tstep)): # Loop on the movie frames
         for i,xi in enumerate(gridx): # Loop over the grid
             for j,yj in enumerate(gridy):
-                patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]/65535.0# # normalise data
-                patch -= np.mean(patch)
+                patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
+                patch = normalisation(patch)
                 S = np.fft.fftshift(np.abs(np.fft.fft2(patch*w) ** 2))
 
-                for l in range(rnb):
-                    radialspec[j,k,l,i-beginning+1]=np.sum(S*nr_pxr[:,:,l])  # radially SUMMED power spectral density
+                for k in range(rnb):
+                    radialspec[t,i,j,k]=np.sum(S*nr_pxr[:,:,k])  # radially SUMMED power spectral density
     return size
 
 # Testing area
@@ -230,7 +232,7 @@ if __name__ == '__main__':
     # r_grid = radial_grid()
     # print(r_grid)
 
-    from pynamix.data import pendulum
+    # from pynamix.data import pendulum
     # data,logfile = pendulum()
     from pynamix.io import load_seq
     from pynamix import color
@@ -244,7 +246,7 @@ if __name__ == '__main__':
     plt.subplot(132)
     plt.pcolormesh(orient[0],cmap=virino)
     plt.colorbar()
-    # plt.subplot(133)
-    # plt.pcolormesh(size[:,:,0])
-    # plt.colorbar()
+    plt.subplot(133)
+    plt.pcolormesh(size[:,:,0])
+    plt.colorbar()
     plt.show()

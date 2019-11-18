@@ -48,6 +48,23 @@
 <div class="section" id="io">
 <span id="id1"></span><h1>IO<a class="headerlink" href="#io" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-pynamix.io"></span><dl class="function">
+<dt id="pynamix.io.strip_seq_log">
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">strip_seq_log</code><span class="sig-paren">(</span><em class="sig-param">filename</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.strip_seq_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clean up filename by removing trailing .seq or .log</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – filename with possible file type</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>filename with .seq or .log stripped</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>filename (str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pynamix.io.load_seq">
 <code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">varian=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_seq" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load an SEQ file and related logfile, reshaping the file into a 3D array if a logfile is present.</p>
@@ -66,7 +83,7 @@
 
 <dl class="function">
 <dt id="pynamix.io.write_seq">
-<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">write_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">data</em>, <em class="sig-param">logfile</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.write_seq" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">write_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">data</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.write_seq" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write an SEQ file and corresponding logfile from a 3D numpy array.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -77,10 +94,22 @@
 </ul>
 </dd>
 </dl>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>FRANCOIS DO THIS</p>
-</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.io.generate_seq">
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">generate_seq</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">detector</em>, <em class="sig-param">mode</em>, <em class="sig-param">nbframe=10</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.generate_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an arbitrary SEQ file for testing purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – The name of the SEQ file to write.</p></li>
+<li><p><strong>detector</strong> (<em>int</em>) – Which detector to simulate (0, 1 or 2).</p></li>
+<li><p><strong>mode</strong> (<em>int</em>) – Which detector mode to simulate (0|1|11|22|44).</p></li>
+<li><p><strong>nbframe</strong> (<em>int</em>) – # of frames to write</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">

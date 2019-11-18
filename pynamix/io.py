@@ -6,6 +6,15 @@ from matplotlib.cm import inferno
 from imageio import imwrite
 
 def strip_seq_log(filename):
+    """
+    Clean up filename by removing trailing .seq or .log
+
+    Args:
+        filename (str): filename with possible file type
+
+    Returns:
+        filename (str): filename with .seq or .log stripped
+    """
     if (filename[-3:] == 'seq') or (filename[-3:] == 'log'):
         filename = filename[:-4] # strip ending if present
     return filename
@@ -216,3 +225,4 @@ if __name__ == '__main__':
     # plt.show()
 
     # generate_seq('test', 1, 1, nbframe=10)
+    pass
