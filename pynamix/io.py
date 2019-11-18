@@ -52,9 +52,16 @@ def load_seq(filename,varian=False):
                 raise Exception('No log file found!')
     return data, logfile
 
-def write_seq(filename,data):
+def write_seq(filename,data,logfile):
     """
-    FRANCOIS DO THIS
+    Write an SEQ file and corresponding logfile from a 3D numpy array.
+
+    Args:
+        filename (str): The name of the SEQ file to write.
+        data (array): The data to write.
+        logfile: The original logfile of the source data.
+
+    .. warning:: FRANCOIS DO THIS
     """
     pass
 
