@@ -1,0 +1,14 @@
+README.md
+setup.py
+pynamix/__init__.py
+pynamix/color.py
+pynamix/data.py
+pynamix/filter.py
+pynamix/io.py
+pynamix/measure.py
+pynamix/testing.py
+pynamix.egg-info/PKG-INFO
+pynamix.egg-info/SOURCES.txt
+pynamix.egg-info/dependency_links.txt
+pynamix.egg-info/requires.txt
+pynamix.egg-info/top_level.txt

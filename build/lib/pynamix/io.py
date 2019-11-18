@@ -66,7 +66,7 @@ def write_seq(filename,data):
         f.write(t.tobytes()) ; 
     f.close()
     f = open(filename+'.log', 'w') ; 
-    json.dump(logfile, f, sort_keys=False, indent=1) ;
+    json.dump({"c": 0, "b": 0, "a": 0}, f, sort_keys=False, indent=1) ;
     f.close() ; 
     
 def generate_seq(filename, detector, mode, nbframe=10):
