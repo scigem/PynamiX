@@ -16,6 +16,7 @@ This code is made up of the following modules:
     * `measure`_
     * `data`_
     * `color`_
+    * `filter`_
 
 .. _io:
 
@@ -48,6 +49,14 @@ Color
 
 .. automodule:: pynamix.color
   :members:
+
+.. _filter:
+
+Filter
+==========================
+
+.. automodule:: pynamix.filter
+:members:
 
 
 Indices and tables

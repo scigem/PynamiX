@@ -1,26 +1,25 @@
 import numpy as np
 from scipy.linalg import eig # NOT SURE WHY NUMPY ONE SEG FAULTS
+from pynamix.filter import *
 
 def main_direction(tensor):
     """Calculate the principal orientation and orientation magnitude of a nematic order tensor.
 
     Args:
-        X: 2 by 2 array represnting the nematic order tensor.
+        tensor: 2 by 2 array represnting the nematic order tensor.
 
     Returns:
         Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.
     """
     v,_ = eig(tensor)
     v = np.real(v) # NOTE: NOT SURE WHY THIS IS NECESSARY
-    # idx=np.argmax(V)
-    # print(v))
     angle=np.arctan2(v[1],v[0]) # HACK: CHECK THIS!!!!!
     if (angle < 0): angle=angle + np.pi
     elif (angle > np.pi): angle=angle - np.pi
     dzeta=np.sqrt(np.sum(tensor ** 2))
     return angle, dzeta
 
-def window_mask(patchw=32):
+def hanning_window(patchw=32):
     """Compute a radial hanning window.
 
     Args:
@@ -82,7 +81,26 @@ def angular_binning(patchw=32,N=10000):
 
     return n_maskQ
 
-def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
+def radial_grid(rnb=200,patchw=32,N=10000): # validated against MATLAB code
+    r_grid = np.linspace(0,patchw*1.5,rnb)
+    nr_px = np.zeros([patchw*2,patchw*2])
+    nr_pxr = np.zeros([patchw*2,patchw*2,rnb])
+
+    Niter = patchw*2*patchw*2*200//N
+    for j in range(Niter):
+        r = (np.random.rand(N,2)-0.5)*2*patchw
+        dst = np.sqrt(r[:,0]**2+r[:,1]**2)
+        x = np.floor(r+patchw).astype(int)
+        for i in range(N):
+            nr_px[ x[i,1],x[i,0]] += 1
+            arg = np.argmin(np.abs(r_grid - dst[i]))
+            nr_pxr[x[i,1],x[i,0],arg] += 1
+    for i in range(rnb):
+        nr_pxr[:,:,i] /= nr_px
+    r_grid += np.mean(np.diff(r_grid))*0.5
+    return r_grid
+
+def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
     """
     Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
 
@@ -98,7 +116,7 @@ def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
     Returns:
         Two arrays of shape which describe the principal orientation and orientation magnitude for each patch
     """
-    w = window_mask(patchw)
+    w = hanning_window(patchw)
     n_maskQ = angular_binning(patchw,N=100) # NOTE: LOW N FOR TESTING - REMOVE THIS LATER
 
     nt,nx,ny = data.shape
@@ -118,8 +136,7 @@ def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
             for j,yj in enumerate(gridy):
                 patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
 
-                if np.std(patch) != 0: patch=(patch - np.mean(patch)) / np.std(patch)
-                else:                  patch=(patch - np.mean(patch))
+                patch = normalisation(patch)
 
                 S = np.fft.fftshift(np.abs(np.fft.fft2(patch*w) ** 2))
 
@@ -153,7 +170,7 @@ def size_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
     Returns:
         Two arrays of shape which describe the principal orientation and orientation magnitude for each patch
     """
-    w = window_mask(patchw)
+    w = hanning_window(patchw)
     n_maskQ = angular_binning(patchw,N=100) # NOTE: LOW N FOR TESTING - REMOVE THIS LATER
 
     nt,nx,ny = data.shape
@@ -162,40 +179,24 @@ def size_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32):
     gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
     if tmax is None: tmax = nt # optionally set end time
 
-    # Prepare thre result matrices (3D), first 2 indices are the grid, the last index is time
-    orient = np.nan * np.zeros([tmax-tmin,len(gridx),len(gridy)])
-    dzeta  = np.nan * np.zeros([tmax-tmin,len(gridx),len(gridy)])
-    Q = np.zeros_like(n_maskQ)
-    Q2 = np.zeros([2,2,nx,ny,nt])
+    frequencyconversion=(sz[2])/244/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength). 244 is the heigth of the detector in mm.
+    radialspec=zeros([tmax-tmin,length(gridx), length(gridy), rnb]) #
 
     for t,ti in enumerate(range(tmin,tmax,tstep)): # Loop on the movie frames
         for i,xi in enumerate(gridx): # Loop over the grid
             for j,yj in enumerate(gridy):
-                patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
-
-                if np.std(patch) != 0: patch=(patch - np.mean(patch)) / np.std(patch)
-                else:                  patch=(patch - np.mean(patch))
-
+                patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]/65535.0# # normalise data
+                patch -= np.mean(patch)
                 S = np.fft.fftshift(np.abs(np.fft.fft2(patch*w) ** 2))
 
-                if np.sum(S) == 0:
-                    Q[:,:,0,0] = Q[:,:,0,1] = Q[:,:,1,0] = Q[:,:,1,1] = S
-                else:
-                    Q[:,:,0,0] = n_maskQ[:,:,0,0].dot(S) / np.sum(S)
-                    Q[:,:,0,1] = n_maskQ[:,:,0,1].dot(S) / np.sum(S)
-                    Q[:,:,1,0] = n_maskQ[:,:,1,0].dot(S) / np.sum(S)
-                    Q[:,:,1,1] = n_maskQ[:,:,1,1].dot(S) / np.sum(S)
-                Q2[:,:,i,j,t] = np.sum(np.sum(Q,0),0)
-                Q2[0,0,i,j,t] -= 0.5
-                Q2[1,1,i,j,t] -= 0.5
-                Q2[:,:,i,j,t] *= np.sqrt(2)
-                orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
+                for l in range(rnb):
+                    radialspec[j,k,l,i-beginning+1]=np.sum(S*nr_pxr[:,:,l])  # radially SUMMED power spectral density
     return size
 
 # Testing area
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    # w = window_mask()
+    # w = hanning_window()
     # plt.imshow(w)
     # plt.colorbar()
     # plt.show()
@@ -215,25 +216,33 @@ if __name__ == '__main__':
     # plt.colorbar()
     # plt.show()
 
-    # m = np.array([[1,0],[1,0]])
+    # m = np.array([[1,0],[1,0]])/np.sqrt(2)
     # angle,dzeta = main_direction(m)
     # print(np.degrees(angle),dzeta)
-    # m = np.array([[1,0],[0,1]])
+    # m = np.array([[1,0],[0,1]])/np.sqrt(2)
     # angle,dzeta = main_direction(m)
     # print(np.degrees(angle),dzeta)
-    # m = np.array([[0,1],[1,0]])
+    # m = np.array([[0,1],[1,0]])/np.sqrt(2)
     # angle,dzeta = main_direction(m)
     # print(np.degrees(angle),dzeta)
 
-    from pynamix.data import radiographs
-    data,logfile = radiographs()
+    #
+    # r_grid = radial_grid()
+    # print(r_grid)
+
+    from pynamix.data import pendulum
+    # data,logfile = pendulum()
+    from pynamix.io import load_seq
+    from pynamix import color
+    virino = color.virino()
+    data,logfile = load_seq('/Volumes/LTS/DynamiX/FRC/Marta/MartaTest1-D0.log')
     orient, dzeta = orientation_map(data,tmin=1000,tmax=1002)
     # size = size_map(data,tmin=1000,tmax=1002)
-
+    #
     plt.subplot(131)
     plt.imshow(data[1000])
     plt.subplot(132)
-    plt.pcolormesh(orient[:,:,0])
+    plt.pcolormesh(orient[0],cmap=virino)
     plt.colorbar()
     # plt.subplot(133)
     # plt.pcolormesh(size[:,:,0])

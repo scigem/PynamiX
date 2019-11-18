@@ -52,6 +52,12 @@ def load_seq(filename,varian=False):
                 raise Exception('No log file found!')
     return data, logfile
 
+def write_seq(filename,data):
+    """
+    FRANCOIS DO THIS
+    """
+    pass
+
 def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,logscale=False,tmin=0,tmax=None,tstep=1):
     """Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.
 
