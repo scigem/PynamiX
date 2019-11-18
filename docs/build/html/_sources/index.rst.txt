@@ -56,7 +56,7 @@ Filter
 ==========================
 
 .. automodule:: pynamix.filter
-:members:
+  :members:
 
 
 Indices and tables

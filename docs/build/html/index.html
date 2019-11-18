@@ -229,7 +229,7 @@
 <dd><p>Load the default dataset of a pendulum swinging, recorded on a DEXELA detector at 4x4 binnging (see the logfile for more information)</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>THIS DATA DOES NOT EXIST YET</p>
+<p>THIS DATA DOES NOT EXIST YET. FRANCOIS THIS IS YOUR JOB.</p>
 </div>
 </dd></dl>
 
@@ -250,10 +250,40 @@
 </div>
 <div class="section" id="filter">
 <span id="id5"></span><h1>Filter<a class="headerlink" href="#filter" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-pynamix.filter"></span><dl class="field-list simple">
-<dt class="field-odd">members</dt>
-<dd class="field-odd"><p></p></dd>
+<span class="target" id="module-pynamix.filter"></span><dl class="function">
+<dt id="pynamix.filter.mean_std">
+<code class="sig-prename descclassname">pynamix.filter.</code><code class="sig-name descname">mean_std</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.filter.mean_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalise an image such that it has zero mean and standard deviation of one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>im</strong> (<em>2D array</em>) – The image to normalise.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The normalised image.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>out (2D array)</p>
+</dd>
 </dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.filter.no_normalisation">
+<code class="sig-prename descclassname">pynamix.filter.</code><code class="sig-name descname">no_normalisation</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.filter.no_normalisation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do not normalise the input image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>im</strong> (<em>2D array</em>) – The image to not normalise.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The <a href="#id6"><span class="problematic" id="id7">**</span></a>un**normalised image.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>out (2D array)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
