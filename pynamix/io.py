@@ -1,4 +1,4 @@
-import os, json, glob
+import os, json, glob, requests, shutil
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
@@ -213,6 +213,18 @@ def load_PIVLab_txtfiles(foldername,tmin=0,tmax=None,tstep=1):
     X,Y = np.meshgrid(x,y,indexing='ij')
 
     return X,Y,u,v
+
+def download_file(url,local_filename):
+    """
+    Download a file from a web site.
+
+    Args:
+        url (str): location to get file from.
+        local_filename (str): Name of file to save
+    """
+    with requests.get(url, stream=True) as r:
+        with open(local_filename, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
 # Testing area
 if __name__ == '__main__':
