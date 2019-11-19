@@ -46,12 +46,17 @@ def load_seq(filename,varian=False):
                     try:
                         logfile = json.load(g)
                         nt = len(logfile['frames'])
-                        ny = logfile['resolution']['width']
-                        nx = logfile['resolution']['height']
+                        nx = logfile['resolution']['width']
+                        ny = logfile['resolution']['height']
+                        if not 'length' in logfile:
+                            if logfile['detector'] < 2: # older detectors
+                                logfile['length'] = 244.0 # length in mm of detector panel
+                            else:
+                                logfile['length'] = 999.0 # length in mm of detector panel - FIXME
                         try:
-                            data = data.reshape(nt,ny,nx)
+                            data = data.reshape(nt,nx,ny)
                         except:
-                            data = data.reshape(-1,ny,nx)
+                            data = data.reshape(-1,nx,ny)
                             print('WARNING: REMOVE THIS TRY STATEMENT AFTER GETTING REAL TEST DATA')
                     except:
                         # for line in g:

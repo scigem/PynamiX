@@ -154,12 +154,14 @@ def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,no
                 orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
     return orient, dzeta
 
-def size_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
+def size_map(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
     """
     Calculate the radial average of the 2D FFT at a set of patches in images in a series.
 
     Args:
         data: The source data. Should be in the shape [nt,nx,ny]
+        logfile (dict): The logfile.
+        rnb (int): Number of points to discretise in the radial direction
         tmin (int): First frame to analyse in the series
         tmax (int): Last frame to analyse in the series
         tstep (int): Spacing between frames to analyse
@@ -179,10 +181,12 @@ def size_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,n
     gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
     if tmax is None: tmax = nt # optionally set end time
 
-    frequencyconversion=logfile['resolution']/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength)
-    radialspec=zeros([(tmax-tmin)//tstep,length(gridx), length(gridy), rnb]) #
+    resolution = logfile['resolution']['width']/logfile['length']['width']
+    frequencyconversion = resolution/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength)
+    radialspec = np.zeros([(tmax-tmin)//tstep,len(gridx),len(gridy),rnb]) #
 
     r_grid, nr_pxr = radial_grid(rnb=rnb,patchw=patchw)
+    wavelength = 1./(r_grid*frequencyconversion) # wavelength in mm
 
     for t,ti in enumerate(range(tmin,tmax,tstep)): # Loop on the movie frames
         for i,xi in enumerate(gridx): # Loop over the grid
@@ -192,8 +196,9 @@ def size_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,n
                 S = np.fft.fftshift(np.abs(np.fft.fft2(patch*w) ** 2))
 
                 for k in range(rnb):
-                    radialspec[t,i,j,k]=np.sum(S*nr_pxr[:,:,k])  # radially SUMMED power spectral density
-    return size
+                    radialspec[t,i,j,k]=np.sum(S*nr_pxr[:,:,k])  # ortho-radially SUMMED power spectral density
+
+    return wavelength, radialspec
 
 # Testing area
 if __name__ == '__main__':
@@ -234,19 +239,34 @@ if __name__ == '__main__':
 
     # from pynamix.data import pendulum
     # data,logfile = pendulum()
+
     from pynamix.io import load_seq
-    from pynamix import color
-    virino = color.virino()
     data,logfile = load_seq('/Volumes/LTS/DynamiX/FRC/Marta/MartaTest1-D0.log')
-    orient, dzeta = orientation_map(data,tmin=1000,tmax=1002)
-    size = size_map(data,tmin=1000,tmax=1002)
+    logfile['resolution'] = {}
+    logfile['length'] = {}
+    logfile['resolution']['width'] = 968 # px
+    logfile['length']['width'] = 240. # mm
+    wavelength, radialspec = size_map(data,logfile,tmin=1000,tmax=1002)
     #
-    plt.subplot(131)
-    plt.imshow(data[1000])
-    plt.subplot(132)
-    plt.pcolormesh(orient[0],cmap=virino)
-    plt.colorbar()
-    plt.subplot(133)
-    plt.pcolormesh(size[:,:,0])
-    plt.colorbar()
+    average_radialspec = np.mean(np.mean(np.mean(radialspec,axis=0),axis=0),axis=0)
+    plt.semilogx(wavelength,average_radialspec)
     plt.show()
+
+
+    # from pynamix.io import load_seq
+    # from pynamix import color
+    # virino = color.virino()
+    # data,logfile = load_seq('/Volumes/LTS/DynamiX/FRC/Marta/MartaTest1-D0.log')
+    # orient, dzeta = orientation_map(data,tmin=1000,tmax=1002)
+    # logfile['resolution'] = 968/240. # px/mm
+    # wavelength, radialspec = size_map(data,logfile,tmin=1000,tmax=1002)
+    # #
+    # plt.subplot(131)
+    # plt.imshow(data[1000])
+    # plt.subplot(132)
+    # plt.pcolormesh(orient[0],cmap=virino)
+    # plt.colorbar()
+    # plt.subplot(133)
+    # plt.pcolormesh(size[:,:,0])
+    # plt.colorbar()
+    # plt.show()
