@@ -239,7 +239,7 @@ if __name__ == '__main__':
     virino = color.virino()
     data,logfile = load_seq('/Volumes/LTS/DynamiX/FRC/Marta/MartaTest1-D0.log')
     orient, dzeta = orientation_map(data,tmin=1000,tmax=1002)
-    # size = size_map(data,tmin=1000,tmax=1002)
+    size = size_map(data,tmin=1000,tmax=1002)
     #
     plt.subplot(131)
     plt.imshow(data[1000])

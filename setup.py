@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.3",
     description='Tools for dealing with radiographs produced in DynamiX',
     url='http://github.sydney.edu.au/scigem/pynamix',
-    author='Benjy Marks',
+    author='Benjy Marks, François Guillard',
     author_email='benjy.marks@sydney.edu.au',
     long_description=long_description,
     long_description_content_type="text/markdown",
