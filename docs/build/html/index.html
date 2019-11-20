@@ -159,6 +159,20 @@
 </dl>
 </dd></dl>
 
+<dl class="function">
+<dt id="pynamix.io.download_file">
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">download_file</code><span class="sig-paren">(</span><em class="sig-param">url</em>, <em class="sig-param">local_filename</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.download_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download a file from a web site.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> (<em>str</em>) – location to get file from.</p></li>
+<li><p><strong>local_filename</strong> (<em>str</em>) – Name of file to save</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <div class="section" id="measure">
 <span id="id2"></span><h1>Measure<a class="headerlink" href="#measure" title="Permalink to this headline">¶</a></h1>
@@ -235,19 +249,27 @@
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Two arrays of shape which describe the principal orientation and orientation magnitude for each patch</p>
+<dd class="field-even"><p><ol class="arabic simple">
+<li><p>the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the principal orientation and (4) the orientation magnitude for each patch.</p></li>
+</ol>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Four 2D arrays which describe</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
-<dt id="pynamix.measure.size_map">
-<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">size_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.size_map" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the radial average of the 2D FFT at a set of patches in images in a series.</p>
+<dt id="pynamix.measure.radial_FFT">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">radial_FFT</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">logfile</em>, <em class="sig-param">rnb=200</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em>, <em class="sig-param">normalisation=&lt;function mean_std&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.radial_FFT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the orthoradial sum of the 2D FFT at a set of patches in images in a series.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
+<li><p><strong>logfile</strong> (<em>dict</em>) – The logfile.</p></li>
+<li><p><strong>rnb</strong> (<em>int</em>) – Number of points to discretise in the radial direction</p></li>
 <li><p><strong>tmin</strong> (<em>int</em>) – First frame to analyse in the series</p></li>
 <li><p><strong>tmax</strong> (<em>int</em>) – Last frame to analyse in the series</p></li>
 <li><p><strong>tstep</strong> (<em>int</em>) – Spacing between frames to analyse</p></li>
@@ -257,7 +279,46 @@
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Two arrays of shape which describe the principal orientation and orientation magnitude for each patch</p>
+<dd class="field-even"><p><ol class="arabic simple">
+<li><p>a 1D vector with the x location of each patch, (2) a 1D vector with the y location of each patch, (3) a 1D vector with the wavelengths corresponding to each spectral dnesity and (4) a 4D array representing the orthoradially summed power spectral density for each patch.</p></li>
+</ol>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Four arrays which describe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.measure.average_size_map">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">average_size_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">logfile</em>, <em class="sig-param">rnb=200</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em>, <em class="sig-param">normalisation=&lt;function mean_std&gt;</em>, <em class="sig-param">wmin=1</em>, <em class="sig-param">wmax=10</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.average_size_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the radial average of the 2D FFT at a set of patches in images in a series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
+<li><p><strong>logfile</strong> (<em>dict</em>) – The logfile.</p></li>
+<li><p><strong>rnb</strong> (<em>int</em>) – Number of points to discretise in the radial direction</p></li>
+<li><p><strong>tmin</strong> (<em>int</em>) – First frame to analyse in the series</p></li>
+<li><p><strong>tmax</strong> (<em>int</em>) – Last frame to analyse in the series</p></li>
+<li><p><strong>tstep</strong> (<em>int</em>) – Spacing between frames to analyse</p></li>
+<li><p><strong>xstep</strong> (<em>int</em>) – Spacing between patches in the x direction</p></li>
+<li><p><strong>ystep</strong> (<em>int</em>) – Spacing between patches in the y direction</p></li>
+<li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
+<li><p><strong>normalisation</strong> (<em>function</em>) – Which function to normalise the patches by</p></li>
+<li><p><strong>wmin</strong> (<em>float</em>) – Minimum wavelength (mm)</p></li>
+<li><p><strong>wmax</strong> (<em>float</em>) – Maximum wavelength (mm)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ol class="arabic simple">
+<li><p>the x location of the centre of each patch, (2) the y location of the centre of each patch and (3) the average size for each patch, defined as the wavelength corresponding to the highest peak in the orthoradially summed power spectral density.</p></li>
+</ol>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Three 2D arrays which describe</p>
 </dd>
 </dl>
 </dd></dl>
@@ -295,16 +356,15 @@
 <span class="target" id="module-pynamix.exposure"></span><dl class="function">
 <dt id="pynamix.exposure.mean_std">
 <code class="sig-prename descclassname">pynamix.exposure.</code><code class="sig-name descname">mean_std</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.exposure.mean_std" title="Permalink to this definition">¶</a></dt>
-<dd><p>Normalise an image such that it has zero mean and standard deviation of one.</p>
+<dd><p>Normalise an image such that it has zero mean and standard deviation of one.
+:param im: The image to normalise.
+:type im: 2D array</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>im</strong> (<em>2D array</em>) – The image to normalise.</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The normalised image.</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The normalised image.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>out (2D array)</p>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>out (2D array)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -312,16 +372,15 @@
 <dl class="function">
 <dt id="pynamix.exposure.no_normalisation">
 <code class="sig-prename descclassname">pynamix.exposure.</code><code class="sig-name descname">no_normalisation</code><span class="sig-paren">(</span><em class="sig-param">im</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.exposure.no_normalisation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do not normalise the input image.</p>
+<dd><p>Do not normalise the input image.
+:param im: The image to not normalise.
+:type im: 2D array</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>im</strong> (<em>2D array</em>) – The image to not normalise.</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The <a href="#id6"><span class="problematic" id="id7">**</span></a>un**normalised image.</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The <a href="#id6"><span class="problematic" id="id7">**</span></a>un**normalised image.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>out (2D array)</p>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>out (2D array)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -371,6 +430,14 @@
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
@@ -379,8 +446,8 @@
       &copy;2019, Benjy Marks.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="_sources/index.rst.txt"

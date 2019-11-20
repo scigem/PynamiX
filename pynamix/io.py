@@ -46,13 +46,13 @@ def load_seq(filename,varian=False):
                     try:
                         logfile = json.load(g)
                         nt = len(logfile['frames'])
-                        nx = logfile['resolution']['width']
-                        ny = logfile['resolution']['height']
-                        if not 'length' in logfile:
-                            if logfile['detector'] < 2: # older detectors
-                                logfile['length'] = 244.0 # length in mm of detector panel
-                            else:
-                                logfile['length'] = 999.0 # length in mm of detector panel - FIXME
+                        nx = logfile['resolution']['height'] # in landscape mode by default
+                        ny = logfile['resolution']['width']
+                        # if not 'length' in logfile:
+                        #     if logfile['detector'] < 2: # older detectors
+                        #         logfile['length'] = 244.0 # length in mm of detector panel
+                        #     else:
+                        #         logfile['length'] = 999.0 # length in mm of detector panel - FIXME
                         try:
                             data = data.reshape(nt,nx,ny)
                         except:
@@ -205,7 +205,6 @@ def load_PIVLab_txtfiles(foldername,tmin=0,tmax=None,tstep=1):
             y_all = data[:,1]
             u = np.zeros([nt,npoints])
             v = np.zeros([nt,npoints])
-        # elif i % 500 == 0: print('Up to file ' + str(i))
         u[i] = data[:,2]
         v[i] = data[:,3]
 
@@ -233,13 +232,13 @@ def download_file(url,local_filename):
 
 # Testing area
 if __name__ == '__main__':
-    # from pynamix.data import pendulum
-    # data,logfile = pendulum()
-    # save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
+    from pynamix.data import pendulum
+    data,logfile = pendulum()
+    save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
 
     # x,y,u,v = load_PIVLab_txtfiles('/Volumes/LTS/DynamiX/PerpetualAvalanche/PerpetualAvalanche-3mm-4mm-80-20/PIV/',tmin=1000,tmax=1020,tstep=5)
     # plt.quiver(x,y,u[0,:,:],v[0,:,:])
     # plt.show()
 
     # generate_seq('test', 1, 1, nbframe=10)
-    pass
+    # pass
