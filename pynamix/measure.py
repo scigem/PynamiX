@@ -282,8 +282,9 @@ if __name__ == '__main__':
     # print(r_grid)
 
     from pynamix.io import load_seq
-    from pynamix.exposure import clamp
+    from pynamix.exposure import clamp, apply_ROI
     data,logfile = load_seq('../data/PerpetualAvalanche-Calibration-3-8-60pc')
+    data,logfile = apply_ROI(data, logfile, left=600)
     print(np.amax(data))
     data = clamp(data,10000,50000)
     logfile['length'] = {}
@@ -301,8 +302,10 @@ if __name__ == '__main__':
     X,Y = np.meshgrid(range(nx),range(ny),indexing='ij')
     plt.subplot(121)
     plt.pcolormesh(X,Y,data[10])
+    plt.gca().invert_yaxis()
     plt.subplot(122)
     plt.pcolormesh(x,y,size[0])
+    plt.gca().invert_yaxis()
     plt.colorbar()
     plt.show()
 

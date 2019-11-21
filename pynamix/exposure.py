@@ -40,3 +40,36 @@ def clamp(data,vmin,vmax):
     """
     masked_data = np.ma.masked_outside(data,vmin,vmax,copy=True)
     return masked_data
+
+
+def apply_ROI(data,logfile,top=0,left=0,right=None,bottom=None):
+    """
+    Apply an ROI to an image or a series of images.
+
+    Args:
+        data (2D or 3D array): The source data.
+        top (int): the index of the top edge of the ROI.
+        left (int): the index of the left edge of the ROI.
+        right (int): the index of the right edge of the ROI.
+        bottom (int): the index of the bottom edge of the ROI.
+    """
+    N = len(data.shape) # number of dimensions
+    if N == 2:
+        nx,ny = data.shape
+        if right == None: right = nx
+        if bottom == None: bottom = ny
+        data_ROI = data[left:right,top:bottom]
+    elif N == 3:
+        _,nx,ny = data.shape
+        if right == None: right = nx
+        if bottom == None: bottom = ny
+        data_ROI = data[:,left:right,top:bottom]
+    else:
+        raise Exception('ROI only defined for 2D and 3D arrays')
+
+    logfile['ROI']["top"] += top
+    logfile['ROI']["left"] += left
+    logfile['ROI']["right"] -= nx - right # IS THIS REALLY HOW WE WANT TO DEFINE IT?!???
+    logfile['ROI']["bottom"] -= ny - bottom # IS THIS REALLY HOW WE WANT TO DEFINE IT?!???
+
+    return data_ROI, logfile
