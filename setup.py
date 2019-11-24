@@ -24,6 +24,10 @@ setuptools.setup(
           'numpy',
           'matplotlib',
           'imageio',
-          'scipy'
+          'scipy',
+          'ipykernel',
+          'sphinx',
+          'nbsphinx',
+          'pandoc',
       ],
 )

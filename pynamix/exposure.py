@@ -22,7 +22,7 @@ def no_normalisation(im):
         im (2D array): The image to not normalise.
 
     Returns:
-        out (2D array): The **un**normalised image.
+        out (2D array): The unnormalised image.
     """
     return im
 

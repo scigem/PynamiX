@@ -7,56 +7,10 @@ Welcome to PynamiX's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
+   :glob:
 
-
-This code is made up of the following modules:
-    * `io`_
-    * `measure`_
-    * `data`_
-    * `color`_
-    * `exposure`_
-
-.. _io:
-
-IO
-==========================
-
-.. automodule:: pynamix.io
-   :members:
-
-.. _measure:
-
-Measure
-==========================
-
-.. automodule:: pynamix.measure
-  :members:
-
-.. _data:
-
-Data
-==========================
-
-.. automodule:: pynamix.data
- :members:
-
-.. _color:
-
-Color
-==========================
-
-.. automodule:: pynamix.color
-  :members:
-
-.. _exposure:
-
-Exposure
-==========================
-
-.. automodule:: pynamix.exposure
-  :members:
+   jupyter-example
 
 
 Indices and tables
