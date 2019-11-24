@@ -47,3 +47,11 @@ Measure
 
 .. automodule:: pynamix.measure
   :members:
+
+.. _plotting:
+
+Plotting
+==========================
+
+.. automodule:: pynamix.plotting
+  :members:
