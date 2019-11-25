@@ -66,9 +66,10 @@ def apply_ROI(data,logfile,top=0,left=0,right=None,bottom=None):
     else:
         raise Exception('ROI only defined for 2D and 3D arrays')
 
-    logfile['ROI']["top"] += top
-    logfile['ROI']["left"] += left
-    logfile['ROI']["right"] -= nx - right # IS THIS REALLY HOW WE WANT TO DEFINE IT?!???
-    logfile['ROI']["bottom"] -= ny - bottom # IS THIS REALLY HOW WE WANT TO DEFINE IT?!???
+    logfile['detector']['ROI_software'] = {}
+    logfile['detector']['ROI_software']["top"] = top
+    logfile['detector']['ROI_software']["left"] = left
+    logfile['detector']['ROI_software']["right"] = right
+    logfile['detector']['ROI_software']["bottom"] = bottom
 
     return data_ROI, logfile

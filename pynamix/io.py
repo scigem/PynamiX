@@ -70,6 +70,54 @@ def load_seq(filename,varian=False):
                 raise Exception('No log file found!')
     return data, logfile
 
+def upgrade_logfile(filename):
+    """Load an old logfile (non-JSON formatted), and port it to JSON formatted. Deprecates the old logfile.
+
+    Args:
+        filename (str): location of log file to load. Can be the full path to the log file including or excluding the file format.
+    """
+    filename = strip_seq_log(filename)
+
+    log = {'detector': {}, 'geometry': {}, 'X-rays': {}}
+    log['detector']['frames'] = []
+    with open(filename + '.log') as f:
+        for line in f:
+            # print(line.split(' '))
+            l = line.split(' ')
+            if (l[0] == 'Mon') or (l[0] == 'Tue') or (l[0] == 'Wed') or (l[0] == 'Thu') or (l[0] == 'Fri') or (l[0] == 'Sat') or (l[0] == 'Sun'):
+                log['timestamp'] = line[:-1] # ignore newline character
+            elif l[0] == 'MODE':
+                log['detector']['mode'] = int(l[1])
+            elif l[0] == '768x960\n':
+                log['detector']['resolution'] = {}
+                log['detector']['resolution']['width']  = 768
+                log['detector']['resolution']['height'] = 960
+            elif l[0] == '1536x1920\n':
+                log['detector']['resolution'] = {}
+                log['detector']['resolution']['width']  = 1536
+                log['detector']['resolution']['height'] = 1920
+            elif l[0] == 'ROI':
+                log['detector']['ROI'] = {}
+                log['detector']['ROI']['top']    = int(l[2])
+                log['detector']['ROI']['left']   = int(l[3][:-1]) # ignore comma
+                log['detector']['ROI']['right']  = int(l[4])
+                log['detector']['ROI']['bottom'] = int(l[5])
+            elif l[0] == 'FPS':
+                log['detector']['fps'] = int(l[1])
+            elif l[0] == '\n':
+                pass
+            else:
+                log['detector']['frames'].append([len(log['detector']['frames']), int(l[0]), 0])
+
+    log['detector']['rotate'] = 0
+    log['detector']['length'] = {}
+    log['detector']['length']['width'] = 195.0
+    log['detector']['length']['height'] = 244.0
+
+    os.rename(filename + '.log', filename + '.log.dep')
+    with open(filename + '.log', 'w') as new:
+        json.dump(log, new, indent=2)
+
 def write_seq(filename,data):
     """
     Write an SEQ file and corresponding logfile from a 3D numpy array.
@@ -232,9 +280,11 @@ def download_file(url,local_filename):
 
 # Testing area
 if __name__ == '__main__':
-    from pynamix.data import pendulum
-    data,logfile = pendulum()
-    save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
+    upgrade_logfile('old.log')
+
+    # from pynamix.data import pendulum
+    # data,logfile = pendulum()
+    # save_as_tiffs('tt',data,tmin=1000,tmax=1050,tstep=10)
 
     # x,y,u,v = load_PIVLab_txtfiles('/Volumes/LTS/DynamiX/PerpetualAvalanche/PerpetualAvalanche-3mm-4mm-80-20/PIV/',tmin=1000,tmax=1020,tstep=5)
     # plt.quiver(x,y,u[0,:,:],v[0,:,:])

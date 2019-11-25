@@ -26,6 +26,7 @@ setuptools.setup(
           'imageio',
           'scipy',
           'ipykernel',
+          'ipywidgets',
           'sphinx',
           'nbsphinx',
           'pandoc',
