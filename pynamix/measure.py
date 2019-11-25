@@ -183,8 +183,7 @@ def radial_FFT(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,p
     gridy = np.arange(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
     if tmax is None: tmax = nt # optionally set end time
 
-    resolution = logfile['detector']['resolution']['height']/logfile['detector']['length']['height']
-    frequencyconversion = resolution/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength)
+    frequencyconversion = logfile['detector']['resolution']/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength)
     radialspec = np.zeros([(tmax-tmin)//tstep,len(gridx),len(gridy),rnb]) #
     # radialspec = np.zeros([rnb,len(gridx)*len(gridy)*(tmax-tmin)//tstep]) # JUST DURING TESTING
 

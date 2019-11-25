@@ -45,26 +45,33 @@ def load_seq(filename,varian=False):
                 with open(filename + '.log') as g:
                     try:
                         logfile = json.load(g)
-                        nt = len(logfile['frames'])
-                        nx = logfile['resolution']['height'] # in landscape mode by default
-                        ny = logfile['resolution']['width']
-                        # if not 'length' in logfile:
-                        #     if logfile['detector'] < 2: # older detectors
-                        #         logfile['length'] = 244.0 # length in mm of detector panel
-                        #     else:
-                        #         logfile['length'] = 999.0 # length in mm of detector panel - FIXME
+
+                        nt = len(logfile['detector']['frames'])
+                        nx = logfile['detector']['image_size']['height'] # in landscape mode by default
+                        ny = logfile['detector']['image_size']['width']
                         try:
                             data = data.reshape(nt,nx,ny)
                         except:
                             data = data.reshape(-1,nx,ny)
-                            print('WARNING: REMOVE THIS TRY STATEMENT AFTER GETTING REAL TEST DATA')
+                            print('WARNING: WRONG NUMBER OF FILES IN LOG FILE. THIS IS VERY BAD.')
+                        if logfile['detector']['rotate'] == 0:
+                            pass
+                        if logfile['detector']['rotate'] >= 1:
+                            data = np.rot90(data, axes=(2,1))
+                        if logfile['detector']['rotate'] >= 2:
+                            data = np.rot90(data, axes=(2,1))
+                        if logfile['detector']['rotate'] == 3:
+                            data = np.rot90(data, axes=(2,1))
                     except:
                         # for line in g:
                             # if line.find('frames') != -1: nt = 0
-                        try: data = data.reshape(-1,960,768)
-                        except: pass
-                        print("WARNING: Haven't implemented old log file checking, assumed no ROI and 2x2 binning")
-                        logfile = {} # TODO
+                        try:
+                            data = data.reshape(-1,960,768)
+                            print("""WARNING: Haven't implemented old log file checking, assumed no ROI and 2x2 binning so this may be garbage. Try using pynamix.io.upgrade_logfile() to upgrade your old log file.""")
+                        except:
+                            raise Exception("Could not find a log file and also could not load your file. Try using pynamix.io.upgrade_logfile() to upgrade your old log file.")
+
+                        logfile = {}
 
             else:
                 raise Exception('No log file found!')
@@ -89,19 +96,22 @@ def upgrade_logfile(filename):
             elif l[0] == 'MODE':
                 log['detector']['mode'] = int(l[1])
             elif l[0] == '768x960\n':
-                log['detector']['resolution'] = {}
-                log['detector']['resolution']['width']  = 768
-                log['detector']['resolution']['height'] = 960
+                log['detector']['panel_size'] = {}
+                log['detector']['panel_size']['width']  = 768
+                log['detector']['panel_size']['height'] = 960
+                log['detector']['panel_size']['unit'] = 'px'
             elif l[0] == '1536x1920\n':
-                log['detector']['resolution'] = {}
-                log['detector']['resolution']['width']  = 1536
-                log['detector']['resolution']['height'] = 1920
+                log['detector']['panel_size'] = {}
+                log['detector']['panel_size']['width']  = 1536
+                log['detector']['panel_size']['height'] = 1920
+                log['detector']['panel_size']['unit'] = 'px'
             elif l[0] == 'ROI':
                 log['detector']['ROI'] = {}
                 log['detector']['ROI']['top']    = int(l[2])
                 log['detector']['ROI']['left']   = int(l[3][:-1]) # ignore comma
                 log['detector']['ROI']['right']  = int(l[4])
                 log['detector']['ROI']['bottom'] = int(l[5])
+                log['detector']['ROI']['unit'] = 'px'
             elif l[0] == 'FPS':
                 log['detector']['fps'] = int(l[1])
             elif l[0] == '\n':
@@ -113,6 +123,8 @@ def upgrade_logfile(filename):
     log['detector']['length'] = {}
     log['detector']['length']['width'] = 195.0
     log['detector']['length']['height'] = 244.0
+    log['detector']['length']['unit'] = 'mm'
+    log['detector']['resolution'] = log['detector']['length']['height']/log['detector']['panel_size']['height']
 
     os.rename(filename + '.log', filename + '.log.dep')
     with open(filename + '.log', 'w') as new:
@@ -280,7 +292,9 @@ def download_file(url,local_filename):
 
 # Testing area
 if __name__ == '__main__':
-    upgrade_logfile('old.log')
+
+    data,logfile = load_seq('~/Downloads/Test-D0')
+    # upgrade_logfile('old.log')
 
     # from pynamix.data import pendulum
     # data,logfile = pendulum()
