@@ -100,7 +100,7 @@ def radial_grid(rnb=200,patchw=32,N=10000): # validated against MATLAB code
     r_grid += np.mean(np.diff(r_grid))*0.5
     return r_grid, nr_pxr
 
-def orientation_map(data,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
+def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
     """
     Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
 
@@ -183,7 +183,7 @@ def radial_FFT(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,p
     gridy = np.arange(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
     if tmax is None: tmax = nt # optionally set end time
 
-    resolution = logfile['resolution']['height']/logfile['length']['height']
+    resolution = logfile['detectors']['resolution']['height']/logfile['detectors']['length']['height']
     frequencyconversion = resolution/(patchw*2) # #(do 1/(frequencyconversion*peakfreq) to get the spatial caracteristic wavelength)
     radialspec = np.zeros([(tmax-tmin)//tstep,len(gridx),len(gridy),rnb]) #
     # radialspec = np.zeros([rnb,len(gridx)*len(gridy)*(tmax-tmin)//tstep]) # JUST DURING TESTING

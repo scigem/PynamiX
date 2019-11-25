@@ -22,7 +22,7 @@ def hist(data,frame,vmin=0,vmax=65535):
     plt.subplot(132)
     plt.imshow(im_masked)
     plt.subplot(133)
-    n,bins,patches=plt.hist(im.flatten())
+    n,bins,patches=plt.hist(im.flatten(),bins=256)
     plt.plot([vmin,vmin],[0,np.amax(n)],'k--',lw=2)
     plt.plot([vmax,vmax],[0,np.amax(n)],'k--',lw=2)
     plt.xlabel('Pixel intensity')
