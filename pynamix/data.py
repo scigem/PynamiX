@@ -15,12 +15,12 @@ def pendulum():
             # if not os.path.exists(_PYNAMIX_ROOT + 'data/'): os.mkdir(_PYNAMIX_ROOT + 'data/')
             # download_file('http://www.benjymarks.com/pynamix/data/Test2.log',_PYNAMIX_ROOT + 'data/pendulum.log')
             # download_file('http://www.benjymarks.com/pynamix/data/Test2.log',_PYNAMIX_ROOT + 'data/pendulum.seq')
-            download_file('http://www.benjymarks.com/pynamix/data/Test2.log','pendulum.log')
-            download_file('http://www.benjymarks.com/pynamix/data/Test2.log','pendulum.seq')
+            download_file('http://www.benjymarks.com/pynamix/data/pendulum.log','pendulum.log')
+            download_file('http://www.benjymarks.com/pynamix/data/pendulum.seq','pendulum.seq')
             print('Data successfully downloaded')
         else:
             raise Exception('Built in data file does not exist')
-    return load_seq('pendulum')
+    return load_seq('pendulum',varian=True)
 
 
 # Testing area

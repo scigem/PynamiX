@@ -41,7 +41,6 @@ def clamp(data,vmin,vmax):
     masked_data = np.ma.masked_outside(data,vmin,vmax,copy=True)
     return masked_data
 
-
 def apply_ROI(data,logfile,top=0,left=0,right=None,bottom=None):
     """
     Apply an ROI to an image or a series of images.
