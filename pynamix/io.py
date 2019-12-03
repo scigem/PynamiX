@@ -1,9 +1,10 @@
-import os, json, glob, requests, shutil
+import os, json, glob, requests, shutil, re
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.cm import inferno
 from imageio import imwrite
+from pynamix.exposure import *
 
 def strip_seq_log(filename):
     """
@@ -95,16 +96,23 @@ def upgrade_logfile(filename):
                 log['timestamp'] = line[:-1] # ignore newline character
             elif l[0] == 'MODE':
                 log['detector']['mode'] = int(l[1])
-            elif l[0] == '768x960\n':
-                log['detector']['panel_size'] = {}
-                log['detector']['panel_size']['width']  = 768
-                log['detector']['panel_size']['height'] = 960
-                log['detector']['panel_size']['unit'] = 'px'
-            elif l[0] == '1536x1920\n':
-                log['detector']['panel_size'] = {}
-                log['detector']['panel_size']['width']  = 1536
-                log['detector']['panel_size']['height'] = 1920
-                log['detector']['panel_size']['unit'] = 'px'
+            # elif l[0] == '768x960\n':
+            #     log['detector']['image_size'] = {}
+            #     log['detector']['image_size']['width']  = 768
+            #     log['detector']['image_size']['height'] = 960
+            #     log['detector']['image_size']['unit'] = 'px'
+            # elif l[0] == '1536x1920\n':
+            #     log['detector']['image_size'] = {}
+            #     log['detector']['image_size']['width']  = 1536
+            #     log['detector']['image_size']['height'] = 1920
+            #     log['detector']['image_size']['unit'] = 'px'
+            elif re.match(r'[0-9]+x[0-9]+', l[0]) is not None:
+                values = l[0].split('x')
+                log['detector']['image_size'] = {}
+                log['detector']['image_size']['width']  = int(values[0])
+                log['detector']['image_size']['height'] = int(values[1][:-1])
+                log['detector']['image_size']['unit'] = 'px'
+
             elif l[0] == 'ROI':
                 log['detector']['ROI'] = {}
                 log['detector']['ROI']['top']    = int(l[2])
@@ -124,7 +132,7 @@ def upgrade_logfile(filename):
     log['detector']['length']['width'] = 195.0
     log['detector']['length']['height'] = 244.0
     log['detector']['length']['unit'] = 'mm'
-    log['detector']['resolution'] = log['detector']['length']['height']/log['detector']['panel_size']['height']
+    log['detector']['resolution'] = log['detector']['length']['height']/log['detector']['image_size']['height']
 
     os.rename(filename + '.log', filename + '.log.dep')
     with open(filename + '.log', 'w') as new:
@@ -190,7 +198,7 @@ def generate_seq(filename, detector, mode, nbframe=10):
             pattern = np.hstack((pattern[delta:],pattern[0:delta]))
 
 
-def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,logscale=False,tmin=0,tmax=None,tstep=1):
+def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,normalisation=no_normalisation,tmin=0,tmax=None,tstep=1):
     """Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.
 
     Args:
@@ -207,32 +215,34 @@ def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,logscal
     nt = data.shape[0]
     if tmax == None: tmax = nt
     if not os.path.exists(foldername): os.makedirs(foldername)
-    if logscale:
-        norm = LogNorm()
-    else:
-        norm = Normalize()
+
     for t in range(tmin,tmax,tstep):
         im = data[t].astype(np.float)
-
-        # Optionally rotate image
+        im = normalisation(im)
         if angle != 0: im = np.rotate(im,angle=angle,mode='edge')
 
-        # Set correct color mapping
-        im = (im -vmin)/(vmax - vmin)*255.0
-        im[im<0] = 0
-        im[im>255] = 255
+        # Set correct color mapping - FIXME: THIS SHOULD BE IN EXPOSURE!!
+        # if not logscale:
+        #     im = (im -vmin)/(vmax - vmin)*255.0
+        #     im[im<0] = 0
+        #     im[im>255] = 255
+        # else:
+        #     im = (np.log(im) - np.log(vmin))/(np.log(vmax) - np.log(vmin))#*255.0
+        #     im[im<0] = 0
+        #     # im[im>255] = 1
+        #     im = np.ma.masked_greater(im,1)
+        #     im = im**0.5
+        #     im *= 255
+
 
         if not colour:
             imwrite(foldername + '/' + str(t).zfill(5) + '.tiff',im.astype(np.uint8))
         else:
             plt.clf()
-            plt.imshow(im,
-    #                    norm = LogNorm(),
-                       cmap = inferno,
+            plt.imsave(foldername + '/' + str(t).zfill(5) + '.tiff',
+                       im,
+                       cmap = inferno
                       )
-            plt.subplots_adjust(left=0,right=1,bottom=0,top=1)
-            plt.axis('off')
-            plt.savefig(foldername + '/' + str(t).zfill(5) + '.tiff',dpi=72)
 
 def load_PIVLab_txtfiles(foldername,tmin=0,tmax=None,tstep=1):
     '''Load a folder full of PIVLab txtfiles and return the data as a series of arrays
