@@ -7,6 +7,7 @@ This project is made up of the following modules:
        * `exposure`_
        * `io`_
        * `measure`_
+       * `plotting`_
 
 .. _color:
 

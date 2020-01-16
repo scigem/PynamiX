@@ -6,10 +6,13 @@
 Welcome to PynamiX's documentation!
 ===================================
 
+PynamiX is a python package for processing radiographs. It contains the following modules:
+
 .. toctree::
    :maxdepth: 4
    :glob:
 
+   pynamix
    jupyter-example
 
 
