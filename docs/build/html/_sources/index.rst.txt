@@ -13,6 +13,13 @@ PynamiX is a python package for processing radiographs. It contains the followin
    :glob:
 
    pynamix
+
+There is also a jupyter notebook included in the package that contains a helpful guide on getting started and some basic use cases:
+
+.. toctree::
+   :maxdepth: 4
+   :glob:
+
    jupyter-example
 
 
