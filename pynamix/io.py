@@ -54,7 +54,7 @@ def load_seq(filename,varian=False):
                             data = data.reshape(nt,nx,ny)
                         except:
                             data = data.reshape(-1,nx,ny)
-                            print('WARNING: WRONG NUMBER OF FILES IN LOG FILE. THIS IS VERY BAD.')
+                            print('WARNING: WRONG NUMBER OF FRAMES IN LOG FILE. THIS IS VERY BAD.')
                         if logfile['detector']['rotate'] == 0:
                             pass
                         if logfile['detector']['rotate'] >= 1:
@@ -71,7 +71,6 @@ def load_seq(filename,varian=False):
                             print("""WARNING: Haven't implemented old log file checking, assumed no ROI and 2x2 binning so this may be garbage. Try using pynamix.io.upgrade_logfile() to upgrade your old log file.""")
                         except:
                             raise Exception("Could not find a log file and also could not load your file. Try using pynamix.io.upgrade_logfile() to upgrade your old log file.")
-
                         logfile = {}
 
             else:

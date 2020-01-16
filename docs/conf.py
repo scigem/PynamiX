@@ -40,6 +40,9 @@ extensions = [
     'sphinx.ext.mathjax',
 ]
 
+nbsphinx_allow_errors = True
+nbsphinx_execute = 'never' # do not run notebooks
+
 ## Include Python objects as they appear in source files
 ## Default: alphabetically ('alphabetical')
 # autodoc_member_order = 'bysource'
