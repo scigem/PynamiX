@@ -117,7 +117,7 @@ def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patc
         Four 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the principal orientation and (4) the orientation magnitude for each patch.
     """
     w = hanning_window(patchw)
-    n_maskQ = angular_binning(patchw,N=100) # NOTE: LOW N FOR TESTING - REMOVE THIS LATER
+    n_maskQ = angular_binning(patchw)
 
     nt,nx,ny = data.shape
 
@@ -175,7 +175,7 @@ def radial_FFT(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,p
         Four arrays which describe: (1) a 1D vector with the x location of each patch, (2) a 1D vector with the y location of each patch, (3) a 1D vector with the wavelengths corresponding to each spectral dnesity and (4) a 4D array representing the orthoradially summed power spectral density for each patch.
     """
     w = hanning_window(patchw)
-    n_maskQ = angular_binning(patchw,N=100) # NOTE: LOW N FOR TESTING - REMOVE THIS LATER
+    n_maskQ = angular_binning(patchw)
 
     nt,nx,ny = data.shape
 
@@ -204,7 +204,7 @@ def radial_FFT(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,p
 
     return gridx, gridy, wavelength, radialspec
 
-def average_size_map(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std,wmin=1,wmax=10):
+def average_size_map(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std,wmin=None,wmax=10,return_FFTs=False):
     """
     Calculate the radial average of the 2D FFT at a set of patches in images in a series.
 
@@ -221,15 +221,17 @@ def average_size_map(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,yste
         normalisation (function): Which function to normalise the patches by
         wmin (float): Minimum wavelength (mm)
         wmax (float): Maximum wavelength (mm)
+        return_FFTs (bool): Optionally return the full FFTs corresponding to each patch
 
     Returns:
         Three 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch and (3) the average size for each patch, defined as the wavelength corresponding to the highest peak in the orthoradially summed power spectral density.
     """
     gridx, gridy, wavelength, radialspec = radial_FFT(data,logfile,rnb=rnb,tmin=tmin,tmax=tmax,tstep=tstep,xstep=xstep,ystep=ystep,patchw=patchw,normalisation=normalisation)
 
+    if wmin == None: wmin = 2/logfile['detector']['resolution'] # use Nyquist frequency - i.e. 2 pixels per particle
     min_val = np.argmin(np.abs(wavelength-wmax)) # this is large wavelength, wavelength is sorted large to small
     max_val = np.argmin(np.abs(wavelength-wmin)) # this is small wavelength, wavelength is sorted large to small
-    print(wavelength[min_val],wavelength[max_val])
+    # print(wavelength[min_val],wavelength[max_val])
     average_size_index = np.argmax(radialspec[:,:,:,min_val:max_val],axis=3)
     average_size_index += min_val
     nt,nx,ny,_ = radialspec.shape
@@ -242,7 +244,73 @@ def average_size_map(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,yste
                 size[t,x,y] = wavelength[average_size_index[t,x,y]]
 
     X,Y = np.meshgrid(gridx,gridy,indexing='ij')
-    return X, Y, size
+
+    if return_FFTs:
+        return X, Y, size, wavelength, radialspec
+    else:
+        return X, Y, size
+
+def bidisperse_concentration_map(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std,s_a=0.5,s_b=2.0,pad=1.2,return_FFTs=False,calib_func=None):
+    """
+    Calculate the concentration of species a of a bidisperse mixture at a set of patches in images in a series.
+
+    Args:
+        data: The source data. Should be in the shape [nt,nx,ny]
+        logfile (dict): The logfile.
+        rnb (int): Number of points to discretise in the radial direction
+        tmin (int): First frame to analyse in the series
+        tmax (int): Last frame to analyse in the series
+        tstep (int): Spacing between frames to analyse
+        xstep (int): Spacing between patches in the x direction
+        ystep (int): Spacing between patches in the y direction
+        patchw (int): The half width of the patch.
+        normalisation (function): Which function to normalise the patches by
+        s_a (float): Size of one set of particles - will return the concentration of this size. Doesn't matter if it is large or small. (mm)
+        s_b (float): Size of other particles (mm)
+        pad (float): Range to look for the peak around each size
+        calib_func (function): Function to use to calibrate the concentration from the peak fraction. If no function given, the peak fraction is returned.
+        return_FFTs (bool): Optionally return the full FFTs corresponding to each patch
+
+    Returns:
+        Three 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch and (3) the average size for each patch, defined as the wavelength corresponding to the highest peak in the orthoradially summed power spectral density.
+    """
+    gridx, gridy, wavelength, radialspec = radial_FFT(data,logfile,rnb=rnb,tmin=tmin,tmax=tmax,tstep=tstep,xstep=xstep,ystep=ystep,patchw=patchw,normalisation=normalisation)
+
+    min_val_a = np.argmin(np.abs(wavelength-s_a*pad)) # this is large wavelength, wavelength is sorted large to small
+    max_val_a = np.argmin(np.abs(wavelength-s_a/pad)) # this is small wavelength, wavelength is sorted large to small
+    min_val_b = np.argmin(np.abs(wavelength-s_b*pad)) # this is large wavelength, wavelength is sorted large to small
+    max_val_b = np.argmin(np.abs(wavelength-s_b/pad)) # this is small wavelength, wavelength is sorted large to small
+
+    peak_a_index = np.argmax(radialspec[:,:,:,min_val_a:max_val_a],axis=3)
+    peak_b_index = np.argmax(radialspec[:,:,:,min_val_b:max_val_b],axis=3)
+    peak_a_index += min_val_a
+    peak_b_index += min_val_b
+
+    nt,nx,ny,_ = radialspec.shape
+
+    # There must be a better way to do this...
+    peak_a = np.zeros([nt,nx,ny])
+    peak_b = np.zeros([nt,nx,ny])
+    for t in range(nt):
+        for x in range(nx):
+            for y in range(ny):
+    #             print(radialspec[:,:,:,peak_a_index[t,x,y]])
+                peak_a[t,x,y] = radialspec[t,x,y,peak_a_index[t,x,y]]
+                peak_b[t,x,y] = radialspec[t,x,y,peak_b_index[t,x,y]]
+
+    peak_fraction =  peak_a / (peak_a + peak_b)
+
+    if calib_func is not None:
+        concentration = calib_func(peak_fraction)
+    else:
+        concentration = peak_fraction
+
+    X,Y = np.meshgrid(gridx,gridy,indexing='ij')
+
+    if return_FFTs:
+        return X, Y, concentration, wavelength, radialspec
+    else:
+        return X, Y, concentration
 
 # Testing area
 if __name__ == '__main__':

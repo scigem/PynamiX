@@ -77,6 +77,28 @@ def load_seq(filename,varian=False):
                 raise Exception('No log file found!')
     return data, logfile
 
+def load_radio_txtfiles(foldername,tmin=0,tmax=None):
+    """Load a set of radiographs produced with James's Forward Projector from DEM data.
+
+    Args:
+        foldername (str): location of data load.
+        tmin (int): number of first file to load.
+        tmax (int): number of last file to load.
+    """
+    files = glob.glob(foldername + '/*.txt')
+    files = sorted(files)
+    if tmax == None: tmax = len(files)
+
+    data = []
+    for f in files[tmin:tmax]:
+        frame = np.loadtxt(f)
+        data.append(frame)
+
+    data = np.array(data)
+    logfile = {}
+
+    return data, logfile
+
 def upgrade_logfile(filename):
     """Load an old logfile (non-JSON formatted), and port it to JSON formatted. Deprecates the old logfile.
 
