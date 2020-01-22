@@ -21,13 +21,6 @@ Should be handled in pip install for you. Currently requires:
 - scipy
 - imageio
 
-## Deploying to PyPI (just a reminder for Benjy, please don't try this yourself)
-Run the following to make a new distribution and upload it to PyPI. **Note**: You first need to update the version number in `setup.py`.
-```
-python3 setup.py sdist
-twine upload dist/*
-```
-
 ## Documentation
 
 We use `sphinx` to manage the docs. Update documentation with:
