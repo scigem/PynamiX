@@ -38,3 +38,10 @@ A sorted implementation list is as follows:
     2. Option to choose between FFT and wavelet transform for size measurement
     3. Wrapper for James's PIV code
     4. Wrapper for James's fake radiograph generator
+
+## Deploying to PyPI (just a reminder for Benjy, please don't try this yourself)
+Run the following to make a new distribution and upload it to PyPI. **Note**: You first need to update the version number in `setup.py`.
+```
+python3 setup.py sdist
+twine upload dist/*
+```
