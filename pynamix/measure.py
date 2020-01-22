@@ -1,22 +1,23 @@
+import os, pynamix
 import numpy as np
-from scipy.linalg import eig # NOT SURE WHY NUMPY ONE SEG FAULTS
 from pynamix.exposure import *
+module_loc = pynamix.__file__[:-11]
 
 def main_direction(tensor):
     """Calculate the principal orientation and orientation magnitude of a nematic order tensor.
 
     Args:
-        tensor: 2 by 2 array represnting the nematic order tensor.
+        tensor: 2 by 2 array representing the nematic order tensor.
 
     Returns:
-        Two values, one for the principal orientation in radians and one for the magnitude of the orientation on a scale of zero to one.
+        Two values, one for the principal orientation in radians (from zero to pi) and one for the magnitude of the orientation on a scale of zero to one.
     """
-    v,_ = eig(tensor)
-    v = np.real(v) # NOTE: NOT SURE WHY THIS IS NECESSARY
-    angle=np.arctan2(v[1],v[0]) # HACK: CHECK THIS!!!!!
-    if (angle < 0): angle=angle + np.pi
-    elif (angle > np.pi): angle=angle - np.pi
-    dzeta=np.sqrt(np.sum(tensor ** 2))
+    v,V = np.linalg.eig(tensor) # eigenvalues (v) and eigenvectors (V)
+    idx = np.argmax(v) # principal eigenvalue
+    angle=np.arctan2(V[1,idx],V[0,idx])
+    if (angle < 0):       angle += np.pi
+    elif (angle > np.pi): angle -= np.pi
+    dzeta=np.sqrt(np.sum(tensor ** 2))  # ||T|| (after eq. 5)
     return angle, dzeta
 
 def hanning_window(patchw=32):
@@ -58,46 +59,55 @@ def angular_binning(patchw=32,N=10000):
     Returns:
         4D array: An array n_maskQ that stores Q(k) coefficients in a 4D table such that Q(kx, ky)=n_maskQ(kx,ky,:,:)
     """
-    K = np.zeros([N,2])
-    n_nbmaskQ = np.zeros([patchw * 2,patchw * 2])
-    n_maskQ   = np.zeros([patchw * 2,patchw * 2,2,2])
-    for j in range(1,1000): # Number of iteration in Monte-Carlo simulation
-        r = (np.random.rand(N,2) - 0.5) * 2 * patchw
-        K[:,0] = r[:,0] / (np.sqrt(r[:,0] ** 2 + r[:,1] ** 2))
-        K[:,1] = r[:,1] / (np.sqrt(r[:,0] ** 2 + r[:,1] ** 2))
-        x = np.floor(r + patchw).astype(np.int)
-        for i in range(1,N):
-            n_nbmaskQ[x[i,1],x[i,0]] += 1
-            n_maskQ[x[i,1],x[i,0],0,0] += K[i,0] * K[i,0]
-            n_maskQ[x[i,1],x[i,0],0,1] += K[i,0] * K[i,1]
-            n_maskQ[x[i,1],x[i,0],1,0] += K[i,1] * K[i,0]
-            n_maskQ[x[i,1],x[i,0],1,1] += K[i,1] * K[i,1]
+    if os.path.exists(module_loc + 'defaults/n_maskQ_' + str(patchw) + '_' + str(N) + '.npy'):
+        n_maskQ = np.load(module_loc + 'defaults/n_maskQ_' + str(patchw) + '_' + str(N) + '.npy')
+    else:
+        K = np.zeros([N,2])
+        n_nbmaskQ = np.zeros([patchw * 2,patchw * 2])
+        n_maskQ   = np.zeros([patchw * 2,patchw * 2,2,2])
+        for j in range(1,1000): # Number of iteration in Monte-Carlo simulation
+            r = (np.random.rand(N,2) - 0.5) * 2 * patchw
+            K[:,0] = r[:,0] / (np.sqrt(r[:,0] ** 2 + r[:,1] ** 2))
+            K[:,1] = r[:,1] / (np.sqrt(r[:,0] ** 2 + r[:,1] ** 2))
+            x = np.floor(r + patchw).astype(np.int)
+            for i in range(1,N):
+                n_nbmaskQ[x[i,1],x[i,0]] += 1
+                n_maskQ[x[i,1],x[i,0],0,0] += K[i,0] * K[i,0]
+                n_maskQ[x[i,1],x[i,0],0,1] += K[i,0] * K[i,1]
+                n_maskQ[x[i,1],x[i,0],1,0] += K[i,1] * K[i,0]
+                n_maskQ[x[i,1],x[i,0],1,1] += K[i,1] * K[i,1]
 
-    # Final scaling for the n_maskQ coefficients.
-    n_maskQ[:,:,0,0] /= n_nbmaskQ
-    n_maskQ[:,:,0,1] /= n_nbmaskQ
-    n_maskQ[:,:,1,0] /= n_nbmaskQ
-    n_maskQ[:,:,1,1] /= n_nbmaskQ
-
+        # Final scaling for the n_maskQ coefficients.
+        n_maskQ[:,:,0,0] /= n_nbmaskQ
+        n_maskQ[:,:,0,1] /= n_nbmaskQ
+        n_maskQ[:,:,1,0] /= n_nbmaskQ
+        n_maskQ[:,:,1,1] /= n_nbmaskQ
+        np.save(module_loc + 'defaults/n_maskQ_' + str(patchw) + '_' + str(N) + '.npy',n_maskQ)
     return n_maskQ
 
 def radial_grid(rnb=200,patchw=32,N=10000): # validated against MATLAB code
-    r_grid = np.linspace(0,patchw*1.5,rnb)
-    nr_px = np.zeros([patchw*2,patchw*2])
-    nr_pxr = np.zeros([patchw*2,patchw*2,rnb])
+    if os.path.exists(module_loc + 'defaults/r_grid_' + str(rnb) + '_' + str(patchw) + '_' + str(N) + '.npy'):
+        r_grid = np.load(module_loc + 'defaults/r_grid_' + str(rnb) + '_' + str(patchw) + '_' + str(N) + '.npy')
+        nr_pxr = np.load(module_loc + 'defaults/nr_pxr_' + str(rnb) + '_' + str(patchw) + '_' + str(N) + '.npy')
+    else:
+        r_grid = np.linspace(0,patchw*1.5,rnb)
+        nr_px = np.zeros([patchw*2,patchw*2])
+        nr_pxr = np.zeros([patchw*2,patchw*2,rnb])
 
-    Niter = patchw*2*patchw*2*200//N
-    for j in range(Niter):
-        r = (np.random.rand(N,2)-0.5)*2*patchw
-        dst = np.sqrt(r[:,0]**2+r[:,1]**2)
-        x = np.floor(r+patchw).astype(int)
-        for i in range(N):
-            nr_px[ x[i,1],x[i,0]] += 1
-            arg = np.argmin(np.abs(r_grid - dst[i]))
-            nr_pxr[x[i,1],x[i,0],arg] += 1
-    for i in range(rnb):
-        nr_pxr[:,:,i] /= nr_px
-    r_grid += np.mean(np.diff(r_grid))*0.5
+        Niter = patchw*2*patchw*2*200//N
+        for j in range(Niter):
+            r = (np.random.rand(N,2)-0.5)*2*patchw
+            dst = np.sqrt(r[:,0]**2+r[:,1]**2)
+            x = np.floor(r+patchw).astype(int)
+            for i in range(N):
+                nr_px[ x[i,1],x[i,0]] += 1
+                arg = np.argmin(np.abs(r_grid - dst[i]))
+                nr_pxr[x[i,1],x[i,0],arg] += 1
+        for i in range(rnb):
+            nr_pxr[:,:,i] /= nr_px
+        r_grid += np.mean(np.diff(r_grid))*0.5
+        np.save(module_loc + 'defaults/r_grid_' + str(rnb) + '_' + str(patchw) + '_' + str(N) + '.npy',r_grid)
+        np.save(module_loc + 'defaults/nr_pxr_' + str(rnb) + '_' + str(patchw) + '_' + str(N) + '.npy',nr_pxr)
     return r_grid, nr_pxr
 
 def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
@@ -143,10 +153,10 @@ def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patc
                 if np.sum(S) == 0:
                     Q[:,:,0,0] = Q[:,:,0,1] = Q[:,:,1,0] = Q[:,:,1,1] = S
                 else:
-                    Q[:,:,0,0] = n_maskQ[:,:,0,0].dot(S) / np.sum(S)
-                    Q[:,:,0,1] = n_maskQ[:,:,0,1].dot(S) / np.sum(S)
-                    Q[:,:,1,0] = n_maskQ[:,:,1,0].dot(S) / np.sum(S)
-                    Q[:,:,1,1] = n_maskQ[:,:,1,1].dot(S) / np.sum(S)
+                    Q[:,:,0,0] = n_maskQ[:,:,0,0]*S / np.sum(S)
+                    Q[:,:,0,1] = n_maskQ[:,:,0,1]*S / np.sum(S)
+                    Q[:,:,1,0] = n_maskQ[:,:,1,0]*S / np.sum(S)
+                    Q[:,:,1,1] = n_maskQ[:,:,1,1]*S / np.sum(S)
                 Q2[:,:,i,j,t] = np.sum(np.sum(Q,0),0)
                 Q2[0,0,i,j,t] -= 0.5
                 Q2[1,1,i,j,t] -= 0.5

@@ -31,4 +31,5 @@ setuptools.setup(
           'nbsphinx',
           'pandoc',
       ],
+    include_package_data=True,
 )
