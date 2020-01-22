@@ -1,6 +1,6 @@
 # PynamiX
 
-[Documentation here](https://pages.github.sydney.edu.au/scigem/PynamiX/build/html/index.html)
+[Documentation here](https://pages.github.sydney.edu.au/scigem/PynamiX/build/html/index.html) (requires login, contact benjy.marks@sydney.edu.au for access, or compile it yourself following the details below)
 
 ## Installation
 Work in progress. Hopefully via `pip install pynamix` but YMMV. If installing from github, try cloning and then running:
@@ -35,7 +35,7 @@ We use `sphinx` to manage the docs. Update documentation with:
 cd docs
 make html
 ```
-Once these are built, you can commit and push the changes to github to have them refreshed on github pages.
+Once these are built, you can commit and push the changes to github to have them refreshed on github pages. You can also view them locally.
 
 ## Roadmap
 
