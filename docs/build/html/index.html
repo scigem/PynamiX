@@ -15,7 +15,7 @@
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="PynamiX example notebook" href="jupyter-example.html" />
+    <link rel="next" title="Project Modules" href="modules.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -36,17 +36,42 @@
 <h1>Welcome to PynamiX’s documentation!<a class="headerlink" href="#welcome-to-pynamix-s-documentation" title="Permalink to this headline">¶</a></h1>
 <p>PynamiX is a python package for processing radiographs. It contains the following modules:</p>
 <div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Project Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#color">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#data">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#exposure">Exposure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#io">IO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#measure">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#plotting">Plotting</a></li>
+</ul>
 </div>
-<p>There is also a jupyter notebook included in the package that contains a helpful guide on getting started and some basic use cases:</p>
+<p>There are also some jupyter notebook included in the package that contains a helpful guide on getting started and some basic use cases:</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="jupyter-example.html">PynamiX example notebook</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="jupyter-example.html#Load-example-data">Load example data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="jupyter-example.html#Apply-an-ROI">Apply an ROI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="jupyter-example.html#Find-min-and-max-threshold-values">Find min and max threshold values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="jupyter-example.html#Apply-threshold">Apply threshold</a></li>
-<li class="toctree-l2"><a class="reference internal" href="jupyter-example.html#Calculate-size-and-orientation-fields">Calculate size and orientation fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="jupyter-example.html#Load-some-PIVLab-data">Load some PIVLab data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/PynamiX-Examples.html">PynamiX example notebook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/PynamiX-Examples.html#Load-example-data">Load example data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/PynamiX-Examples.html#Apply-an-ROI">Apply an ROI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/PynamiX-Examples.html#Find-min-and-max-threshold-values">Find min and max threshold values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/PynamiX-Examples.html#Apply-threshold">Apply threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/PynamiX-Examples.html#Calculate-size-and-orientation-fields">Calculate size and orientation fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/PynamiX-Examples.html#Load-some-PIVLab-data">Load some PIVLab data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/Fibres.html">Calculate fibre orientation from a photograph</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Fibres.html#Load-example-data">Load example data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Fibres.html#Show-example-data">Show example data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Fibres.html#(Optionally)-apply-an-ROI">(Optionally) apply an ROI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Fibres.html#Calculate-orientation-field">Calculate orientation field</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/Eranga.html">Calculate bidisperse concentration field</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Eranga.html#Load-example-data">Load example data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Eranga.html#Apply-an-ROI-to-remove-weird-external-box-from-James’s-data">Apply an ROI to remove weird external box from James’s data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Eranga.html#Get-bidisperse-values">Get bidisperse values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Eranga.html#Plot-peak-fraction">Plot peak fraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Eranga.html#Investigate-wavelength-decomposition">Investigate wavelength decomposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/Eranga.html#Do-everything-in-one-go">Do everything in one go</a></li>
 </ul>
 </li>
 </ul>
@@ -79,14 +104,25 @@
 
 <h3>Navigation</h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="jupyter-example.html">PynamiX example notebook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Project Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#color">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#data">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#exposure">Exposure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#io">IO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#measure">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#plotting">Plotting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/PynamiX-Examples.html">PynamiX example notebook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/Fibres.html">Calculate fibre orientation from a photograph</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/Eranga.html">Calculate bidisperse concentration field</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="jupyter-example.html" title="next chapter">PynamiX example notebook</a></li>
+      <li>Next: <a href="modules.html" title="next chapter">Project Modules</a></li>
   </ul></li>
 </ul>
 </div>
