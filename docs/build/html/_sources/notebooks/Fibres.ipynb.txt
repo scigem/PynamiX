@@ -1,0 +1,150 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Calculate fibre orientation from a photograph"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "from skimage.color import rgb2gray\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "from pynamix import io, data, measure, color, plotting, exposure\n",
+    "virino = color.virino()\n",
+    "\n",
+    "%matplotlib inline"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Load example data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "io.download_file('https://thumbs.dreamstime.com/b/hypnos-circles-concentric-abstract-texture-vector-illustration-hypnotic-swirl-spiral-background-137959483.jpg','spiral.jpg') # download an image from the internet\n",
+    "im = rgb2gray(plt.imread('spiral.jpg')) # load an image and convert to grayscale\n",
+    "logfile = {} # needed for loading/manipulating radiographs, not used here\n",
+    "ims = np.expand_dims(im,0) # make into a 3D array to conform with pynamix convention"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Show example data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plt.imshow(ims[0],cmap='gray') # show the first 'frame' in the video (i.e. the only image)\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## (Optionally) apply an ROI"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# ims, logfile = exposure.apply_ROI(ims, logfile, left=600)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Calculate orientation field"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "patchw=8\n",
+    "X,Y,orient,dzeta = measure.orientation_map(ims,logfile,patchw=patchw,xstep=patchw//4,ystep=patchw//4)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fig = plt.figure(figsize=[14,4])\n",
+    "\n",
+    "plt.subplot(131)\n",
+    "plt.title('Original image')\n",
+    "plt.imshow(ims[0],origin='lower',cmap='gray')\n",
+    "\n",
+    "plt.subplot(132)\n",
+    "plt.title(r'$\\theta$')\n",
+    "plt.pcolormesh(X,Y,orient[0],cmap=virino,vmin=0,vmax=np.pi)\n",
+    "cb = plt.colorbar()\n",
+    "cb.set_ticks([0,np.pi/2.,np.pi])\n",
+    "cb.set_ticklabels([r'$0$',r'$\\pi/2$',r'$\\pi$'])\n",
+    "\n",
+    "plt.subplot(133)\n",
+    "plt.title(r'$||T||$')\n",
+    "plt.pcolormesh(X,Y,dzeta[0],vmin=0,vmax=1)\n",
+    "plt.colorbar()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
