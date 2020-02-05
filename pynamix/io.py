@@ -257,7 +257,7 @@ def save_as_tiffs(foldername,data,vmin=0,vmax=65535,angle=0,colour=False,normali
 
 
         if not colour:
-            imwrite(foldername + '/' + str(t).zfill(5) + '.tiff',im.astype(np.uint8))
+            imwrite(foldername + '/' + str(t).zfill(5) + '.tiff',im.astype(np.uint16))
         else:
             plt.clf()
             plt.imsave(foldername + '/' + str(t).zfill(5) + '.tiff',
