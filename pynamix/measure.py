@@ -110,7 +110,7 @@ def radial_grid(rnb=200,patchw=32,N=10000): # validated against MATLAB code
         np.save(module_loc + 'defaults/nr_pxr_' + str(rnb) + '_' + str(patchw) + '_' + str(N) + '.npy',nr_pxr)
     return r_grid, nr_pxr
 
-def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
+def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std,padding_mode='empty'):
     """
     Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
 
@@ -122,17 +122,23 @@ def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patc
         xstep (int): Spacing between patches in the x direction
         ystep (int): Spacing between patches in the y direction
         patchw (int): The half width of the patch.
+        normalisation: Which normalisation to use.
+        padding_mode: What to use for data points outside the experimental domain. Pick one from the list from the documentation of `numpy.pad`
 
     Returns:
-        Four 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the principal orientation and (4) the orientation magnitude for each patch.
+        Four 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the principal orientation and (4) the orientation magnitude for each patch. By default, pads with empty numbers to return NaNs.
     """
     w = hanning_window(patchw)
     n_maskQ = angular_binning(patchw)
 
     nt,nx,ny = data.shape
 
-    gridx = range(patchw,nx-patchw,xstep) # locations of centres of patches in x direction
-    gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
+    # If no padding
+    # gridx = range(patchw,nx-patchw,xstep) # locations of centres of patches in x direction
+    # gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
+    # With padding
+    gridx = range(0,nx,xstep) # locations of centres of patches in x direction
+    gridy = range(0,ny,ystep) # locations of centres of patches in y direction
     if tmax is None: tmax = nt # optionally set end time
 
     # Prepare thre result matrices (3D), first 2 indices are the grid, the last index is time
@@ -142,9 +148,12 @@ def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patc
     Q2 = np.zeros([2,2,nx,ny,nt])
 
     for t,ti in enumerate(range(tmin,tmax,tstep)): # Loop on the movie frames
+        frame = data[ti]
+        frame = np.pad(frame, patchw, mode=padding_mode)
         for i,xi in enumerate(gridx): # Loop over the grid
             for j,yj in enumerate(gridy):
-                patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw]
+                # patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw] # no padding
+                patch = frame[xi:xi+2*patchw,yj:yj+2*patchw]
 
                 patch = normalisation(patch)
 
@@ -163,7 +172,7 @@ def orientation_map(data,logfile,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patc
                 Q2[:,:,i,j,t] *= np.sqrt(2)
                 orient[t,i,j],dzeta[t,i,j] = main_direction(Q2[:,:,i,j,t])
 
-    X,Y = np.meshgrid(gridx,gridy,indexing='ij')
+    Y,X = np.meshgrid(gridx,gridy,indexing='ij') # HACK: not sure why these are backwards? I blame matlab
     return X, Y, orient, dzeta
 
 def radial_FFT(data,logfile,rnb=200,tmin=0,tmax=None,tstep=1,xstep=32,ystep=32,patchw=32,normalisation=mean_std):
