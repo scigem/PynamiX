@@ -1,5 +1,6 @@
 import os
 import pynamix
+import numpy as np
 import matplotlib.pyplot as plt
 from pynamix.io import load_seq, download_file
 
@@ -52,20 +53,20 @@ def fibres(theta_mean=0.0,kappa=1.0,N=500,dpi=200,lw=4,alpha=0.2):
     Args:
         N (int): Number of fibres to draw. More makes the image darker.
         theta_mean (float): An angle between 0 and 2 pi that is the average fibre orientation.
-        kappa (float): A number greater than 0 that defines the alignment of the particles. kappa -> inf is perfectly aligned, kappa -> 0 is heterogeneous.
+        kappa (float): A number greater than 0 that defines the alignment of the particles. kappa -> inf is perfectly aligned, kappa -> 0 is heterogeneous. This parameter is used in the vonmises circular distribution to generate random angles.
         dpi (int): Resolution of final image
-        lw (int): Width of fibres
+        lw (int): Width of fibres in image
         alpha (float): Transparency of the fibres. Default is 0.2.
 
     Returns:
-        Nothing. Saves a file called `fibres_theta_kappa_N.png`
+        Saves a file called `fibres_theta_kappa_N.png`
     """
     from scipy.stats import vonmises
     fig = plt.figure(figsize=[4,4])
     ax = plt.subplot(111)
 
     for i in range(N):
-        theta = theta_mean + vonmises.rvs(kappa, size=1)
+        theta = np.pi + theta_mean + vonmises.rvs(kappa, size=1)
         x = np.random.rand() - 0.5
         y = np.random.rand() - 0.5
         plt.plot([x-np.cos(theta),x+np.cos(theta)],
@@ -80,8 +81,9 @@ def fibres(theta_mean=0.0,kappa=1.0,N=500,dpi=200,lw=4,alpha=0.2):
     plt.xticks([])
     plt.yticks([])
     plt.subplots_adjust(left=0,right=1,bottom=0,top=1)
-    plt.savefig('fibres_'str(theta_mean)+'_'+str(kappa)+'_'+str(N)+'.png',dpi=dpi)
+    plt.savefig('fibres_'+str(theta_mean)+'_'+str(kappa)+'_'+str(N)+'.png',dpi=dpi)
 
+    plt.close()
 # Testing area
 if __name__ == '__main__':
     data, logfile = pendulum()
