@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="pynamix",  # Replace with your own username
-    version="0.0.6",
+    name="pynamix",
+    version="0.1",
     description="Tools for dealing with radiographs produced in DynamiX",
     url="http://github.sydney.edu.au/scigem/pynamix",
     author="Benjy Marks, François Guillard",
@@ -25,6 +25,7 @@ setuptools.setup(
         "matplotlib",
         "imageio",
         "scipy",
+        "scikit-image",
         "ipykernel",
         "ipywidgets",
         "sphinx",
