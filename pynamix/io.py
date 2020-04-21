@@ -5,6 +5,7 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.cm import inferno
 from imageio import imwrite
 from pynamix.exposure import *
+from skimage.color import rgb2gray
 
 
 def strip_seq_log(filename):
@@ -113,6 +114,23 @@ def load_radio_txtfiles(foldername, tmin=0, tmax=None):
     logfile = {}
 
     return data, logfile
+
+
+def load_image(filename, as_gray=True):
+    """Load an image and put it into an appropriate format so that it can be used by any pynamix function. Returns an empty logfile too.
+
+    Args:
+        filename (str): location of image to load.
+        as_gray (bool): whether or not to convert the image to grayscale. If not, you will need to do this manually to be able to pass this image into other functions.
+    """
+    im = plt.imread(filename)  # load an image
+    if as_gray:  # convert to grayscale
+        im = rgb2gray(im)
+    logfile = {}  # needed for loading/manipulating radiographs, not used here
+    ims = np.expand_dims(
+        im, 0
+    )  # make into a 3D array to conform with pynamix convention
+    return ims, logfile
 
 
 def upgrade_logfile(filename):
