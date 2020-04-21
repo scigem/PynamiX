@@ -3,11 +3,10 @@ from pynamix.io import *
 
 
 class SimpleTestCase(unittest.TestCase):
-
     def setUp(self):
         """Call before every test case."""
         self.foo = Foo()
-        self.file = open( "blah", "r" )
+        self.file = open("blah", "r")
 
     def tearDown(self):
         """Call after every test case."""
@@ -19,7 +18,7 @@ class SimpleTestCase(unittest.TestCase):
 
     def testB(self):
         """test case B"""
-        assert foo+foo == 34, "can't add Foo instances"
+        assert foo + foo == 34, "can't add Foo instances"
 
     def testC(self):
         """test case C"""
@@ -27,7 +26,6 @@ class SimpleTestCase(unittest.TestCase):
 
 
 class OtherTestCase(unittest.TestCase):
-
     def setUp(self):
         blah_blah_blah()
 
@@ -39,4 +37,4 @@ class OtherTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() # run all tests
+    unittest.main()  # run all tests
