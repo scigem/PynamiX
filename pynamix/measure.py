@@ -1,5 +1,7 @@
 import os, pynamix
 import numpy as np
+from scipy.signal import correlate2d
+from scipy.ndimage import zoom, gaussian_filter
 from pynamix.exposure import *
 
 module_loc = pynamix.__file__[:-11]
@@ -44,6 +46,41 @@ def hanning_window(patchw=32):
     return w
 
 
+def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
+    """Generate two 1D vectors that grid an image
+
+    Args:
+        data: The source data. Should be in the shape [nt,nx,ny]
+        logfile: The logfile.
+        xstep (int): The half width of the patch.
+        ystep (int): The half width of the patch.
+        patchw (int): The half width of the patch.
+        mode (str): bottom-left or centre. Either bottom/left aligned or centred in the image.
+
+    .. warning:: centred mode not implemented yet
+
+    Returns:
+        The radial hanning window.
+    """
+    nt, nx, ny = data.shape
+
+    if mode == "bottom-left":
+        # If no padding
+        # if padding_mode == "None":
+        # locations of centres of patches in x direction
+        gridx = np.arange(patchw, nx - patchw, xstep)
+        # locations of centres of patches in y direction
+        gridy = np.arange(patchw, ny - patchw, ystep)
+        # else:
+        # locations of centres of patches in x direction
+        # gridx = np.arange(0, nx, xstep)
+        # locations of centres of patches in y direction
+        # gridy = np.arange(0, ny, ystep)
+    else:
+        sys.exit("Sorry, haven't implemeneted centred grid yet")
+    return gridx, gridy
+
+
 def angular_binning(patchw=32, N=10000):
     """
     Use a Monte-Carlo method to compute the individual Q(k) coefficients for equation 4 in `Guillard et al. 2017 <https://www.nature.com/articles/s41598-017-08573-y>`_.
@@ -72,6 +109,9 @@ def angular_binning(patchw=32, N=10000):
             module_loc + "defaults/n_maskQ_" + str(patchw) + "_" + str(N) + ".npy"
         )
     else:
+        print(
+            "WARNING: Haven't cached these Q coefficients. Run will take longer this time."
+        )
         K = np.zeros([N, 2])
         n_nbmaskQ = np.zeros([patchw * 2, patchw * 2])
         n_maskQ = np.zeros([patchw * 2, patchw * 2, 2, 2])
@@ -96,6 +136,7 @@ def angular_binning(patchw=32, N=10000):
             module_loc + "defaults/n_maskQ_" + str(patchw) + "_" + str(N) + ".npy",
             n_maskQ,
         )
+        print("Successfully cached Q coefficients.")
     return n_maskQ
 
 
@@ -182,13 +223,15 @@ def orientation_map(
     ystep=32,
     patchw=32,
     normalisation=mean_std,
-    padding_mode="constant",
+    padding_mode=None,
+    verbose=0,
 ):
     """
     Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.
 
     Args:
         data: The source data. Should be in the shape [nt,nx,ny]
+        logfile: The logfile.
         tmin (int): First frame to analyse in the series
         tmax (int): Last frame to analyse in the series
         tstep (int): Spacing between frames to analyse
@@ -196,43 +239,39 @@ def orientation_map(
         ystep (int): Spacing between patches in the y direction
         patchw (int): The half width of the patch.
         normalisation: Which normalisation to use.
-        padding_mode: What to use for data points outside the experimental domain. Pick one from the list from the documentation of `numpy.pad`
+        padding_mode: What to use for data points outside the experimental domain. Pick one from the list from the documentation of `numpy.pad` or None (default)
+        verbose: (int): How noisy this function should be. 0 for nothing (default), 1 for text updates, 2 for figures.
 
     Returns:
         Four 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the principal orientation and (4) the orientation magnitude for each patch. By default, pads with empty numbers to return NaNs.
     """
     w = hanning_window(patchw)
     n_maskQ = angular_binning(patchw)
-
     nt, nx, ny = data.shape
 
-    # If no padding
-    # gridx = range(patchw,nx-patchw,xstep) # locations of centres of patches in x direction
-    # gridy = range(patchw,ny-patchw,ystep) # locations of centres of patches in y direction
-    # With padding
-    gridx = range(0, nx, xstep)  # locations of centres of patches in x direction
-    gridy = range(0, ny, ystep)  # locations of centres of patches in y direction
     if tmax is None:
         tmax = nt  # optionally set end time
-
+    gridx, gridy = grid(data, logfile, xstep, ystep, patchw, mode="bottom-left")
     # Prepare thre result matrices (3D), first 2 indices are the grid, the last index is time
     orient = np.nan * np.zeros([tmax - tmin, len(gridx), len(gridy)])
     dzeta = np.nan * np.zeros([tmax - tmin, len(gridx), len(gridy)])
     Q = np.zeros_like(n_maskQ)
-    Q2 = np.zeros([2, 2, nx, ny, nt])
-
-    for t, ti in enumerate(range(tmin, tmax, tstep)):  # Loop on the movie frames
+    # Q2 = np.zeros([2, 2, nx, ny, nt])
+    Q2 = np.zeros([2, 2])
+    # Loop on the movie frames
+    for t, ti in enumerate(range(tmin, tmax, tstep)):
+        if verbose == 1:
+            print("Up to frame " + str(ti) + " out of " + str(tmax), end="\r")
         frame = data[ti]
-        frame = np.pad(frame, patchw, mode=padding_mode)
+        if padding_mode is not None:
+            frame = np.pad(frame, patchw, mode=padding_mode)
         for i, xi in enumerate(gridx):  # Loop over the grid
             for j, yj in enumerate(gridy):
-                # patch = data[ti,xi-patchw:xi+patchw,yj-patchw:yj+patchw] # no padding
-                patch = frame[xi : xi + 2 * patchw, yj : yj + 2 * patchw]
+                patch = data[ti, xi - patchw : xi + patchw, yj - patchw : yj + patchw]
 
                 patch = normalisation(patch)
 
                 S = np.fft.fftshift(np.abs(np.fft.fft2(patch * w) ** 2))
-
                 if np.sum(S) == 0:
                     Q[:, :, 0, 0] = Q[:, :, 0, 1] = Q[:, :, 1, 0] = Q[:, :, 1, 1] = S
                 else:
@@ -240,12 +279,15 @@ def orientation_map(
                     Q[:, :, 0, 1] = n_maskQ[:, :, 0, 1] * S / np.sum(S)
                     Q[:, :, 1, 0] = n_maskQ[:, :, 1, 0] * S / np.sum(S)
                     Q[:, :, 1, 1] = n_maskQ[:, :, 1, 1] * S / np.sum(S)
-                Q2[:, :, i, j, t] = np.sum(np.sum(Q, 0), 0)
-                Q2[0, 0, i, j, t] -= 0.5
-                Q2[1, 1, i, j, t] -= 0.5
-                Q2[:, :, i, j, t] *= np.sqrt(2)
-                orient[t, i, j], dzeta[t, i, j] = main_direction(Q2[:, :, i, j, t])
-
+                # Q2[:, :, i, j, t] = np.sum(np.sum(Q, 0), 0)
+                # Q2[0, 0, i, j, t] -= 0.5
+                # Q2[1, 1, i, j, t] -= 0.5
+                # Q2[:, :, i, j, t] *= np.sqrt(2)
+                Q2[:, :] = np.sum(np.sum(Q, axis=0), axis=0)
+                Q2[0, 0] -= 0.5
+                Q2[1, 1] -= 0.5
+                Q2[:, :] *= np.sqrt(2)
+                orient[t, i, j], dzeta[t, i, j] = main_direction(Q2)
     Y, X = np.meshgrid(
         gridx, gridy, indexing="ij"
     )  # HACK: not sure why these are backwards? I blame matlab
@@ -498,6 +540,168 @@ def bidisperse_concentration_map(
         return X, Y, concentration
 
 
+def velocity_map(
+    data,
+    logfile,
+    tmin=0,
+    tmax=None,
+    tstep=1,
+    searchw=4,
+    xstep=32,
+    ystep=32,
+    patchw=32,
+    zoomvalue=10,
+    normalisation=mean_std,
+    padding_mode="edge",
+    verbose=0,
+):
+    """
+    Calculate the velocity field at a set of patches between two images in a series.
+
+    Args:
+        data: The source data. Should be in the shape [nt,nx,ny]
+        logfile: The logfile.
+        tmin (int): First frame to analyse in the series
+        tmax (int): Last frame to analyse in the series (velocities at this frame will not be calculated)
+        tstep (int): Spacing between frames to analyse
+        xstep (int): Spacing between patches in the x direction
+        ystep (int): Spacing between patches in the y direction
+        searchw (int): Half width of search area
+        patchw (int): The half width of the patch.
+        zoom (int): Zoom level for subpixel resolution.
+        normalisation: Which normalisation to use.
+        padding_mode: What to use for data points outside the experimental domain. Pick one from "fill", "wrap" or "symm"
+        verbose (int): 0 for nothing. 1 for text. 2 for graphs.
+
+    .. warning:: THIS WORKS VERY POORLY AND SLOWLY - NOTE SURE WHY!!
+
+    Returns:
+        Four 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the x velocity (4) the y velocity. By default, pads with empty numbers to return NaNs.
+    """
+    nt, nx, ny = data.shape
+    px_per_frame_to_mm_per_s = (
+        tstep * logfile["detector"]["resolution"] / logfile["detector"]["fps"]
+    )
+
+    if tmax is None:
+        tmax = nt  # optionally set end time
+    gridx, gridy = grid(data, logfile, xstep, ystep, patchw, mode="bottom-left")
+    # Prepare thre result matrices
+    u = np.nan * np.zeros([tmax - tmin, len(gridx), len(gridy)])
+    v = np.nan * np.zeros([tmax - tmin, len(gridx), len(gridy)])
+
+    # Loop over the frames with a given spacing tstep
+    for t, ti in enumerate(range(tmin, tmax, tstep)):
+        if verbose == 1:
+            print("Up to frame " + str(ti) + " out of " + str(tmax), end="\r")
+        this_frame = data[ti]
+        next_frame = data[ti + tstep]
+
+        this_frame = np.pad(this_frame, patchw, mode=padding_mode)
+        next_frame = np.pad(next_frame, patchw + searchw, mode=padding_mode)
+
+        if zoom is not 1:
+            # Linearly interpolate images
+            this_frame = zoom(this_frame, zoomvalue, order=1)
+            next_frame = zoom(next_frame, zoomvalue, order=1)
+
+        # Loop over the grid
+        # xi,yj are the centre of the patch but NOT the search window,
+        # which is offset by searchw in both directions
+        for i, xi in enumerate(gridx):
+            for j, yj in enumerate(gridy):
+                this_patch = this_frame[
+                    (xi - patchw) * zoomvalue : (xi + patchw + 1) * zoomvalue,
+                    (yj - patchw) * zoomvalue : (yj + patchw + 1) * zoomvalue,
+                ]
+                search_window = next_frame[
+                    (xi - patchw)
+                    * zoomvalue : (xi + patchw + 2 * searchw + 1)
+                    * zoomvalue,
+                    (yj - patchw)
+                    * zoomvalue : (yj + patchw + 2 * searchw + 1)
+                    * zoomvalue,
+                ]
+
+                this_patch = this_patch - this_patch.mean()
+                search_window = search_window - search_window.mean()
+
+                corr1 = correlate2d(
+                    search_window, this_patch, mode="valid", boundary="fill"
+                )
+                # corr2 = correlate2d(
+                #     this_patch,
+                #     this_patch,
+                #     mode="valid",
+                #     boundary="symm",
+                #     # fillvalue=fillvalue,
+                # )
+                # corr3 = correlate2d(
+                #     search_window,
+                #     search_window,
+                #     mode="valid",
+                #     boundary="symm",
+                #     # fillvalue=fillvalue,
+                # )
+                # find the match
+                # corr = corr1 / corr2 / corr3
+                ybest, xbest = np.unravel_index(np.argmax(corr1), corr1.shape)
+
+                u[t, i, j] = (xbest - searchw) * px_per_frame_to_mm_per_s
+                v[t, i, j] = -(ybest - searchw) * px_per_frame_to_mm_per_s
+                if verbose == 2:
+                    plt.ion()
+                    plt.clf()
+                    plt.subplot(221)
+                    plt.imshow(
+                        search_window,
+                        vmin=np.amin(search_window),
+                        vmax=np.amax(search_window),
+                    )
+                    plt.colorbar()
+                    plt.plot()
+                    plt.subplot(222)
+                    plt.imshow(
+                        this_patch,
+                        vmin=np.amin(search_window),
+                        vmax=np.amax(search_window),
+                    )
+                    plt.colorbar()
+                    plt.subplot(223)
+                    plt.imshow(corr1)
+                    plt.plot(xbest, ybest, "ro")
+                    # plt.colorbar()
+                    plt.pause(0.1)
+
+    Y, X = np.meshgrid(
+        gridx, gridy, indexing="ij"
+    )  # HACK: not sure why these are backwards? I blame matlab
+    return X, Y, u, v
+
+
+def validate_velocities(u, v, threshold=2, sigma=1):
+    """
+    Validate a velocity field so that it is within a tolerance of the gaussian smoothed value
+
+    Args:
+        u (nd array): horizontal velocity field
+        v (nd array): vertical velocity field
+        threshold (float): How many times larger/smaller a value should be for it to be masked
+        sigma (float): Width of gaussian blurring to define mean field
+
+    Returns:
+        Masked u and v arrays.
+    """
+    u_smoothed = gaussian_filter(u, sigma=sigma)
+    v_smoothed = gaussian_filter(v, sigma=sigma)
+    mask = (np.abs(u - u_smoothed) / abs(u_smoothed) > threshold) | (
+        np.abs(v - v_smoothed) / abs(v_smoothed) > threshold
+    )
+    u_filtered = np.ma.masked_where(mask, u)
+    v_filtered = np.ma.masked_where(mask, v)
+    return u_filtered, v_filtered
+
+
 # Testing area
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
@@ -537,13 +741,16 @@ if __name__ == "__main__":
 
     from pynamix.io import load_seq
     from pynamix.exposure import clamp, apply_ROI
+    from pynamix.data import pendulum
 
-    data, logfile = load_seq("../data/PerpetualAvalanche-Calibration-3-8-60pc")
-    data, logfile = apply_ROI(data, logfile, left=600)
-    print(np.amax(data))
-    data = clamp(data, 10000, 50000)
-    logfile["length"] = {}
-    logfile["length"]["height"] = 240.0  # mm
+    # data, logfile = pendulum()
+    # data, logfile = apply_ROI(data, logfile, left=600)
+    # print(np.amax(data))
+    # data = clamp(data, 10000, 50000)
+    # logfile["length"] = {}
+    # logfile["length"]["height"] = 240.0  # mm
+    # plt.imshow(data[1000])
+    # plt.show()
     # print(len(logfile['frames']))
     # plt.imshow(data[10])
     # plt.show()
@@ -551,18 +758,18 @@ if __name__ == "__main__":
     # plt.semilogx(wavelength,radialspec)
     # plt.show()
 
-    x, y, size = average_size_map(data, logfile, tmin=10, tmax=11)
-
-    nt, nx, ny = data.shape
-    X, Y = np.meshgrid(range(nx), range(ny), indexing="ij")
-    plt.subplot(121)
-    plt.pcolormesh(X, Y, data[10])
-    plt.gca().invert_yaxis()
-    plt.subplot(122)
-    plt.pcolormesh(x, y, size[0])
-    plt.gca().invert_yaxis()
-    plt.colorbar()
-    plt.show()
+    # x, y, size = average_size_map(data, logfile, tmin=10, tmax=11)
+    #
+    # nt, nx, ny = data.shape
+    # X, Y = np.meshgrid(range(nx), range(ny), indexing="ij")
+    # plt.subplot(121)
+    # plt.pcolormesh(X, Y, data[10])
+    # plt.gca().invert_yaxis()
+    # plt.subplot(122)
+    # plt.pcolormesh(x, y, size[0])
+    # plt.gca().invert_yaxis()
+    # plt.colorbar()
+    # plt.show()
 
     # from pynamix.io import load_seq
     # from pynamix import color
@@ -578,3 +785,40 @@ if __name__ == "__main__":
     # plt.pcolormesh(size[:,:,0])
     # plt.colorbar()
     # plt.show()
+    from pynamix.io import upgrade_logfile
+    from pynamix import exposure
+
+    fname = "/Volumes/LTS/DynamiX/FRC/Bernie_Hazim/test_new_orientation_300_400_1"
+    if not os.path.exists(fname + ".log.dep"):
+        upgrade_logfile(fname)
+
+    data, logfile = load_seq(fname)
+    # clamped_data = exposure.clamp(data, 4000, 18000)
+
+    x, y, u, v = velocity_map(
+        data,
+        logfile,
+        tmin=1000,
+        tmax=1001,
+        tstep=1,
+        xstep=32,
+        ystep=32,
+        patchw=16,
+        searchw=3,
+        zoomvalue=2,
+        normalisation=mean_std,
+        padding_mode="constant",
+        verbose=0,
+    )
+
+    u2, v2 = validate_velocities(u, v, threshold=2, sigma=1)
+    u2 = u2.filled(0)
+    v2 = v2.filled(0)
+    # print(u)
+    # print(u2)
+    plt.clf()
+    plt.imshow(data[1000])
+    plt.quiver(x, y, u[0], v[0], color="r")
+    plt.quiver(x, y, u2[0], v2[0], color="k")
+    plt.ioff()
+    plt.show()

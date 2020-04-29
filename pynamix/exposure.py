@@ -11,8 +11,9 @@ def mean_std(im):
     Returns:
         out (2D array): The normalised image.
     """
-    if np.std(im) != 0:
-        out = (im - np.mean(im)) / np.std(im)
+    std = np.std(im)
+    if std != 0:
+        out = (im - np.mean(im)) / std
     else:
         out = im - np.mean(im)
     return out
@@ -33,7 +34,7 @@ def no_normalisation(im):
 
 def clamp(data, vmin, vmax):
     """
-    Clamp an image between two values, masking it outside of those values.
+    Clamp an image between two values.
 
     Args:
         data (ND array): The image to clamp.
@@ -41,10 +42,13 @@ def clamp(data, vmin, vmax):
         vmax (float): The highest value to clamp above.
 
     Returns:
-        masked_data (masked ND array): The same data as the original, but with masked values outside of the defined range.
+        clamped_data (ND array): The same data as the original, but with no values outside of the defined range.
     """
-    masked_data = np.ma.masked_outside(data, vmin, vmax, copy=True)
-    return masked_data
+    # masked_data = np.ma.masked_outside(data, vmin, vmax, copy=True)
+    clamped_data = data.copy()
+    clamped_data[data < vmin] = vmin
+    clamped_data[data > vmax] = vmax
+    return clamped_data
 
 
 def apply_ROI(data, logfile, top=0, left=0, right=None, bottom=None):
@@ -75,7 +79,8 @@ def apply_ROI(data, logfile, top=0, left=0, right=None, bottom=None):
         data_ROI = data[:, left:right, top:bottom]
     else:
         raise Exception("ROI only defined for 2D and 3D arrays")
-
+    if not "detector" in logfile:
+        logfile["detector"] = {}
     logfile["detector"]["ROI_software"] = {}
     logfile["detector"]["ROI_software"]["top"] = top
     logfile["detector"]["ROI_software"]["left"] = left
