@@ -1,5 +1,6 @@
 import os, pynamix
 import numpy as np
+from astropy.convolution import convolve
 from scipy.signal import correlate2d
 from scipy.ndimage import zoom, gaussian_filter
 from pynamix.exposure import *
@@ -65,17 +66,27 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
     nt, nx, ny = data.shape
 
     if mode == "bottom-left":
-        # If no padding
-        # if padding_mode == "None":
-        # locations of centres of patches in x direction
-        gridx = np.arange(patchw, nx - patchw, xstep)
-        # locations of centres of patches in y direction
-        gridy = np.arange(patchw, ny - patchw, ystep)
-        # else:
-        # locations of centres of patches in x direction
-        # gridx = np.arange(0, nx, xstep)
-        # locations of centres of patches in y direction
-        # gridy = np.arange(0, ny, ystep)
+        if "ROI" in logfile["detector"]:
+            gridx = np.arange(
+                logfile["detector"]["ROI"]["left"] + patchw,
+                nx - patchw + logfile["detector"]["ROI"]["right"],
+                xstep,
+            )
+            # locations of centres of patches in y direction
+            gridy = np.arange(
+                logfile["detector"]["ROI"]["bot"] + patchw,
+                ny - patchw + logfile["detector"]["ROI"]["top"],
+                ystep,
+            )
+        else:
+            gridx = np.arange(patchw, nx - patchw, xstep)
+            gridy = np.arange(patchw, ny - patchw, ystep)
+    # else:
+    # locations of centres of patches in x direction
+    # gridx = np.arange(0, nx, xstep)
+    # locations of centres of patches in y direction
+    # gridy = np.arange(0, ny, ystep)
+
     else:
         sys.exit("Sorry, haven't implemeneted centred grid yet")
     return gridx, gridy
@@ -279,18 +290,12 @@ def orientation_map(
                     Q[:, :, 0, 1] = n_maskQ[:, :, 0, 1] * S / np.sum(S)
                     Q[:, :, 1, 0] = n_maskQ[:, :, 1, 0] * S / np.sum(S)
                     Q[:, :, 1, 1] = n_maskQ[:, :, 1, 1] * S / np.sum(S)
-                # Q2[:, :, i, j, t] = np.sum(np.sum(Q, 0), 0)
-                # Q2[0, 0, i, j, t] -= 0.5
-                # Q2[1, 1, i, j, t] -= 0.5
-                # Q2[:, :, i, j, t] *= np.sqrt(2)
-                Q2[:, :] = np.sum(np.sum(Q, axis=0), axis=0)
+                Q2 = np.sum(np.sum(Q, axis=0), axis=0)
                 Q2[0, 0] -= 0.5
                 Q2[1, 1] -= 0.5
-                Q2[:, :] *= np.sqrt(2)
+                Q2 *= np.sqrt(2)
                 orient[t, i, j], dzeta[t, i, j] = main_direction(Q2)
-    Y, X = np.meshgrid(
-        gridx, gridy, indexing="ij"
-    )  # HACK: not sure why these are backwards? I blame matlab
+    X, Y = np.meshgrid(gridx, gridy, indexing="ij")
     return X, Y, orient, dzeta
 
 
@@ -578,6 +583,7 @@ def velocity_map(
     Returns:
         Four 2D arrays which describe: (1) the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the x velocity (4) the y velocity. By default, pads with empty numbers to return NaNs.
     """
+    print("WARNING: Do not use this function it is pretty garbage.")
     nt, nx, ny = data.shape
     px_per_frame_to_mm_per_s = (
         tstep * logfile["detector"]["resolution"] / logfile["detector"]["fps"]
@@ -585,97 +591,97 @@ def velocity_map(
 
     if tmax is None:
         tmax = nt  # optionally set end time
-    gridx, gridy = grid(data, logfile, xstep, ystep, patchw, mode="bottom-left")
     # Prepare thre result matrices
+    gridx, gridy = grid(data, logfile, xstep, ystep, patchw, mode="bottom-left")
     u = np.nan * np.zeros([tmax - tmin, len(gridx), len(gridy)])
     v = np.nan * np.zeros([tmax - tmin, len(gridx), len(gridy)])
 
     # Loop over the frames with a given spacing tstep
-    for t, ti in enumerate(range(tmin, tmax, tstep)):
+    for t, ti in enumerate(range(tmin, tmax - 1, tstep)):
         if verbose == 1:
             print("Up to frame " + str(ti) + " out of " + str(tmax), end="\r")
-        this_frame = data[ti]
-        next_frame = data[ti + tstep]
+        this_frame = data[ti]  # .copy()
+        next_frame = data[ti + tstep]  # .copy()
 
-        this_frame = np.pad(this_frame, patchw, mode=padding_mode)
-        next_frame = np.pad(next_frame, patchw + searchw, mode=padding_mode)
+        patchws = [patchw]  # * 4, patchw * 2, patchw]
+        xsteps = [xstep]  # * 4, xstep * 2, xstep]
+        ysteps = [ystep]  # * 4, ystep * 2, ystep]
+        searchws = [searchw]  # , searchw // 2, searchw // 4]
 
-        if zoom is not 1:
-            # Linearly interpolate images
-            this_frame = zoom(this_frame, zoomvalue, order=1)
-            next_frame = zoom(next_frame, zoomvalue, order=1)
+        for level, pw in enumerate(patchws):
+            sw = searchws[level]
 
-        # Loop over the grid
-        # xi,yj are the centre of the patch but NOT the search window,
-        # which is offset by searchw in both directions
-        for i, xi in enumerate(gridx):
-            for j, yj in enumerate(gridy):
-                this_patch = this_frame[
-                    (xi - patchw) * zoomvalue : (xi + patchw + 1) * zoomvalue,
-                    (yj - patchw) * zoomvalue : (yj + patchw + 1) * zoomvalue,
-                ]
-                search_window = next_frame[
-                    (xi - patchw)
-                    * zoomvalue : (xi + patchw + 2 * searchw + 1)
-                    * zoomvalue,
-                    (yj - patchw)
-                    * zoomvalue : (yj + patchw + 2 * searchw + 1)
-                    * zoomvalue,
-                ]
+            this_frame = np.pad(this_frame, pw, mode=padding_mode)
+            next_frame = np.pad(next_frame, pw + sw, mode=padding_mode)
 
-                this_patch = this_patch - this_patch.mean()
-                search_window = search_window - search_window.mean()
+            if zoom is not 1:  # how does this work with levels????
+                # Linearly interpolate images
+                this_frame = zoom(this_frame, zoomvalue, order=1)
+                next_frame = zoom(next_frame, zoomvalue, order=1)
 
-                corr1 = correlate2d(
-                    search_window, this_patch, mode="valid", boundary="fill"
-                )
-                # corr2 = correlate2d(
-                #     this_patch,
-                #     this_patch,
-                #     mode="valid",
-                #     boundary="symm",
-                #     # fillvalue=fillvalue,
-                # )
-                # corr3 = correlate2d(
-                #     search_window,
-                #     search_window,
-                #     mode="valid",
-                #     boundary="symm",
-                #     # fillvalue=fillvalue,
-                # )
-                # find the match
-                # corr = corr1 / corr2 / corr3
-                ybest, xbest = np.unravel_index(np.argmax(corr1), corr1.shape)
+            # Loop over the grid
+            # xi,yj are the centre of the patch but NOT the search window,
+            # which is offset by searchw in both directions
+            for i, xi in enumerate(gridx):
+                for j, yj in enumerate(gridy):
+                    this_patch = this_frame[
+                        (xi - pw) * zoomvalue : (xi + pw + 1) * zoomvalue,
+                        (yj - pw) * zoomvalue : (yj + pw + 1) * zoomvalue,
+                    ]
+                    search_window = next_frame[
+                        (xi - pw) * zoomvalue : (xi + pw + 2 * sw + 1) * zoomvalue,
+                        (yj - pw) * zoomvalue : (yj + pw + 2 * sw + 1) * zoomvalue,
+                    ]
 
-                u[t, i, j] = (xbest - searchw) * px_per_frame_to_mm_per_s
-                v[t, i, j] = -(ybest - searchw) * px_per_frame_to_mm_per_s
-                if verbose == 2:
-                    plt.ion()
-                    plt.clf()
-                    plt.subplot(221)
-                    plt.imshow(
-                        search_window,
-                        vmin=np.amin(search_window),
-                        vmax=np.amax(search_window),
-                    )
-                    plt.colorbar()
-                    plt.plot()
-                    plt.subplot(222)
-                    plt.imshow(
-                        this_patch,
-                        vmin=np.amin(search_window),
-                        vmax=np.amax(search_window),
-                    )
-                    plt.colorbar()
-                    plt.subplot(223)
-                    plt.imshow(corr1)
-                    plt.plot(xbest, ybest, "ro")
-                    # plt.colorbar()
-                    plt.pause(0.1)
+                    # this_patch = this_patch - np.mean(this_patch)
+                    # search_window = search_window - np.mean(search_window)
 
-    Y, X = np.meshgrid(
-        gridx, gridy, indexing="ij"
-    )  # HACK: not sure why these are backwards? I blame matlab
+                    # this_patch = (this_patch - np.mean(this_patch)) / np.std(this_patch)
+                    # search_window = (search_window - np.mean(search_window)) / np.std(
+                    # search_window
+                    # )
+
+                    corr1 = correlate2d(search_window, this_patch, mode="valid")
+                    # corr2 = np.sum(correlate2d(this_patch, this_patch, mode="valid"))
+                    # corr3 = np.sum(
+                    # correlate2d(search_window, search_window, mode="valid")
+                    # )
+                    C = corr1
+                    # C = corr1 / corr2 / corr3
+                    # C = convolve(search_window, this_patch)
+                    ybest, xbest = np.unravel_index(np.argmax(C), C.shape)
+                    if C[ybest, xbest] > 0:  # pick a random threshold for badness
+                        u[t, i, j] = (
+                            ybest - searchw * zoomvalue
+                        ) * px_per_frame_to_mm_per_s
+                        v[t, i, j] = (
+                            -(xbest - searchw * zoomvalue) * px_per_frame_to_mm_per_s
+                        )
+                    if verbose == 2:
+                        plt.ion()
+                        plt.clf()
+                        plt.subplot(221)
+                        plt.imshow(
+                            search_window,
+                            vmin=np.amin(search_window),
+                            vmax=np.amax(search_window),
+                        )
+                        plt.colorbar()
+                        plt.plot(xbest + patchw, ybest + patchw, "ro")
+                        plt.subplot(222)
+                        plt.imshow(
+                            this_patch,
+                            vmin=np.amin(search_window),
+                            vmax=np.amax(search_window),
+                        )
+                        plt.colorbar()
+                        plt.subplot(223)
+                        plt.imshow(C)
+                        plt.plot(xbest, ybest, "ro")
+                        plt.colorbar()
+                        plt.pause(0.1)
+
+    X, Y = np.meshgrid(gridx, gridy, indexing="ij")
     return X, Y, u, v
 
 
@@ -704,121 +710,57 @@ def validate_velocities(u, v, threshold=2, sigma=1):
 
 # Testing area
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
+    # Try with fake data - WORKS
+    logfile = {}
+    logfile["detector"] = {}
+    logfile["detector"]["resolution"] = 1
+    logfile["detector"]["fps"] = 1
+    data = np.random.rand(2, 200, 300)
+    X, Y = np.meshgrid(
+        np.arange(data.shape[1]), np.arange(data.shape[2]), indexing="ij"
+    )
+    data[0] += X / 50
+    data[1] = data[0]
+    data[1] = np.roll(data[1], 1, axis=0)
+    data[1] = np.roll(data[1], 3, axis=1)
 
-    # w = hanning_window()
-    # plt.imshow(w)
-    # plt.colorbar()
-    # plt.show()
+    # data = np.zeros([2, 200, 300])
+    # data[0, 30:40, 40:50] = 1
+    # data[1] = data[0]
+    # data[1] = np.roll(data[1], 1, axis=0)
+    # data[1] = np.roll(data[1], 3, axis=1)
 
-    # n_maskQ = angular_binning(N=1000)
-    # plt.subplot(221)
-    # plt.imshow(n_maskQ[:,:,0,0])
-    # plt.colorbar()
-    # plt.subplot(222)
-    # plt.imshow(n_maskQ[:,:,0,1])
-    # plt.colorbar()
-    # plt.subplot(223)
-    # plt.imshow(n_maskQ[:,:,1,0])
-    # plt.colorbar()
-    # plt.subplot(224)
-    # plt.imshow(n_maskQ[:,:,1,1])
-    # plt.colorbar()
-    # plt.show()
-
-    # m = np.array([[1,0],[1,0]])/np.sqrt(2)
-    # angle,dzeta = main_direction(m)
-    # print(np.degrees(angle),dzeta)
-    # m = np.array([[1,0],[0,1]])/np.sqrt(2)
-    # angle,dzeta = main_direction(m)
-    # print(np.degrees(angle),dzeta)
-    # m = np.array([[0,1],[1,0]])/np.sqrt(2)
-    # angle,dzeta = main_direction(m)
-    # print(np.degrees(angle),dzeta)
-
-    # r_grid = radial_grid()
-    # print(r_grid)
-
-    from pynamix.io import load_seq
-    from pynamix.exposure import clamp, apply_ROI
-    from pynamix.data import pendulum
-
-    # data, logfile = pendulum()
-    # data, logfile = apply_ROI(data, logfile, left=600)
-    # print(np.amax(data))
-    # data = clamp(data, 10000, 50000)
-    # logfile["length"] = {}
-    # logfile["length"]["height"] = 240.0  # mm
-    # plt.imshow(data[1000])
-    # plt.show()
-    # print(len(logfile['frames']))
-    # plt.imshow(data[10])
-    # plt.show()
-    # wavelength, radialspec = radial_FFT(data,logfile,tmin=10,tmax=12)
-    # plt.semilogx(wavelength,radialspec)
-    # plt.show()
-
-    # x, y, size = average_size_map(data, logfile, tmin=10, tmax=11)
-    #
-    # nt, nx, ny = data.shape
-    # X, Y = np.meshgrid(range(nx), range(ny), indexing="ij")
-    # plt.subplot(121)
-    # plt.pcolormesh(X, Y, data[10])
-    # plt.gca().invert_yaxis()
-    # plt.subplot(122)
-    # plt.pcolormesh(x, y, size[0])
-    # plt.gca().invert_yaxis()
-    # plt.colorbar()
-    # plt.show()
-
-    # from pynamix.io import load_seq
-    # from pynamix import color
-    # virino = color.virino()
-    # data,logfile = load_seq('/Volumes/LTS/DynamiX/FRC/Marta/MartaTest1-D0.log')
-    # orient, dzeta = orientation_map(data,tmin=1000,tmax=1002)
-    # plt.subplot(131)
-    # plt.imshow(data[1000])
-    # plt.subplot(132)
-    # plt.pcolormesh(orient[0],cmap=virino)
-    # plt.colorbar()
-    # plt.subplot(133)
-    # plt.pcolormesh(size[:,:,0])
-    # plt.colorbar()
-    # plt.show()
-    from pynamix.io import upgrade_logfile
-    from pynamix import exposure
-
-    fname = "/Volumes/LTS/DynamiX/FRC/Bernie_Hazim/test_new_orientation_300_400_1"
-    if not os.path.exists(fname + ".log.dep"):
-        upgrade_logfile(fname)
-
-    data, logfile = load_seq(fname)
-    # clamped_data = exposure.clamp(data, 4000, 18000)
+    # Try some real data
+    # data, logfile = load_seq("/Volumes/LTS/DynamiX/FRC/Marta/MartaTest1-D0")
+    # data = data[1000:1002].copy().astype(np.float64)
+    # data[1] = data[0]
+    # print(data.shape)
 
     x, y, u, v = velocity_map(
         data,
         logfile,
-        tmin=1000,
-        tmax=1001,
+        # tmin=1000,
+        # tmax=1001,
         tstep=1,
         xstep=32,
         ystep=32,
-        patchw=16,
-        searchw=3,
-        zoomvalue=2,
+        patchw=32,
+        searchw=5,
+        zoomvalue=1,
         normalisation=mean_std,
         padding_mode="constant",
-        verbose=0,
+        verbose=2,
     )
+    print(u)
+    # u2, v2 = validate_velocities(u, v, threshold=2, sigma=1)
+    # u2 = u2.filled(0)
+    # v2 = v2.filled(0)
 
-    u2, v2 = validate_velocities(u, v, threshold=2, sigma=1)
-    u2 = u2.filled(0)
-    v2 = v2.filled(0)
-    # print(u)
-    # print(u2)
     plt.clf()
-    plt.imshow(data[1000])
-    plt.quiver(x, y, u[0], v[0], color="r")
-    plt.quiver(x, y, u2[0], v2[0], color="k")
-    plt.ioff()
-    plt.show()
+
+    plt.pcolormesh(
+        X, Y, data[0],
+    )
+    plt.quiver(x, y, u[0], v[0], color="g")
+    # plt.quiver(x, y, u2[0], v2[0], color="k")
+    plt.savefig("tt.png", dpi=200)

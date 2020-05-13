@@ -45,3 +45,5 @@ Run the following to make a new distribution and upload it to PyPI. **Note**: Yo
 python3 setup.py sdist
 twine upload dist/*
 ```
+
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)

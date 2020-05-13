@@ -65,13 +65,13 @@ def load_seq(filename, varian=False):
                             print(
                                 "WARNING: WRONG NUMBER OF FRAMES IN LOG FILE. THIS IS VERY BAD."
                             )
-                        if logfile["detector"]["rotate"] == 0:
+                        if logfile["detector"]["rotate"] == 0:  # landscape
                             pass
-                        if logfile["detector"]["rotate"] >= 1:
+                        if logfile["detector"]["rotate"] >= 1:  # portrait
                             data = np.rot90(data, axes=(2, 1))
-                        if logfile["detector"]["rotate"] >= 2:
+                        if logfile["detector"]["rotate"] >= 2:  # landscape
                             data = np.rot90(data, axes=(2, 1))
-                        if logfile["detector"]["rotate"] == 3:
+                        if logfile["detector"]["rotate"] == 3:  # portrait
                             data = np.rot90(data, axes=(2, 1))
                     except:
                         # for line in g:
@@ -343,32 +343,46 @@ def load_PIVLab_txtfiles(foldername, tmin=0, tmax=None, tstep=1):
         - u (3D array): The horizontal velocity of each patch. Has the shape [nt,nx,y].
         - v (3D array): The vertical velocity of each patch. Has the shape [nt,nx,y].
     """
+    if os.path.exists(foldername + "x_PIV.npy"):
+        X = np.load(foldername + "x_PIV.npy")
+        Y = np.load(foldername + "y_PIV.npy")
+        u = np.load(foldername + "u_PIV.npy")
+        v = np.load(foldername + "v_PIV.npy")
+    else:
+        print(
+            "WARNING: Converting txtfiles to numpy arrays for faster loading next time."
+        )
+        files = glob.glob(foldername + "/*.txt")
+        files = sorted(files)
+        nt = len(files)
+        if tmax == None:
+            tmax = nt
+        if nt == 0:
+            raise Exception("Did not find any text files in that folder")
+        for i, f in enumerate(files[tmin:tmax:tstep]):
+            data = np.loadtxt(f, skiprows=3, delimiter=",")
+            if i == 0:
+                npoints = data.shape[0]  # number of data points in total
+                x_all = data[:, 0]
+                y_all = data[:, 1]
+                u = np.zeros([nt, npoints])
+                v = np.zeros([nt, npoints])
+            u[i] = data[:, 2]
+            v[i] = data[:, 3]
 
-    files = glob.glob(foldername + "/*.txt")
-    files = sorted(files)
-    nt = len(files)
-    if end == None:
-        end = nt
-
-    for i, f in enumerate(files[tmin:tmax:tstep]):
-        data = np.loadtxt(f, skiprows=3, delimiter=",")
-        if i == 0:
-            npoints = data.shape[0]  # number of data points in total
-            x_all = data[:, 0]
-            y_all = data[:, 1]
-            u = np.zeros([nt, npoints])
-            v = np.zeros([nt, npoints])
-        u[i] = data[:, 2]
-        v[i] = data[:, 3]
-
-    x = np.unique(x_all)
-    y = np.unique(y_all)
-    nx = len(x)
-    ny = len(y)
-    u = u.reshape([nt, nx, ny])
-    v = v.reshape([nt, nx, ny])
-    X, Y = np.meshgrid(x, y, indexing="ij")
-
+        x = np.unique(x_all) - 1  # convert from 1-based to 0-based counting
+        y = np.unique(y_all) - 1  # convert from 1-based to 0-based counting
+        nx = len(x)
+        ny = len(y)
+        u = u.reshape([nt, nx, ny])
+        v = v.reshape([nt, nx, ny])
+        u = u[:, :, ::-1]  # flip matlab image orientation convention
+        v = v[:, :, ::-1]  # flip matlab image orientation convention
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        np.save(foldername + "x_PIV.npy", X)
+        np.save(foldername + "y_PIV.npy", Y)
+        np.save(foldername + "u_PIV.npy", u)
+        np.save(foldername + "v_PIV.npy", v)
     return X, Y, u, v
 
 
