@@ -14,7 +14,7 @@
    "outputs": [],
    "source": [
     "import os\n",
-    "from skimage.color import rgb2gray\n",
+    "# from skimage.color import rgb2gray\n",
     "import numpy as np\n",
     "import matplotlib.pyplot as plt\n",
     "from pynamix import io, data, measure, color, plotting, exposure\n",
@@ -37,9 +37,7 @@
    "outputs": [],
    "source": [
     "io.download_file('https://thumbs.dreamstime.com/b/hypnos-circles-concentric-abstract-texture-vector-illustration-hypnotic-swirl-spiral-background-137959483.jpg','spiral.jpg') # download an image from the internet\n",
-    "im = rgb2gray(plt.imread('spiral.jpg')) # load an image and convert to grayscale\n",
-    "logfile = {} # needed for loading/manipulating radiographs, not used here\n",
-    "ims = np.expand_dims(im,0) # make into a 3D array to conform with pynamix convention"
+    "ims, logfile = io.load_image('spiral.jpg')"
    ]
   },
   {
@@ -142,7 +140,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.7.5"
+   "version": "3.7.6"
   }
  },
  "nbformat": 4,

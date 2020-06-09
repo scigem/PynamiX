@@ -20,8 +20,6 @@ There are also some jupyter notebook included in the package that contains a hel
    notebooks/Fibres
    notebooks/Eranga
 
-
-
 Indices and tables
 ==================
 

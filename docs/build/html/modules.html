@@ -64,6 +64,28 @@
 <div class="section" id="data">
 <span id="id2"></span><h1>Data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-pynamix.data"></span><dl class="function">
+<dt id="pynamix.data.fibres">
+<code class="sig-prename descclassname">pynamix.data.</code><code class="sig-name descname">fibres</code><span class="sig-paren">(</span><em class="sig-param">theta_mean=0.0</em>, <em class="sig-param">kappa=1.0</em>, <em class="sig-param">N=500</em>, <em class="sig-param">dpi=200</em>, <em class="sig-param">lw=4</em>, <em class="sig-param">alpha=0.2</em>, <em class="sig-param">foldername='.'</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.data.fibres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a fake image of fibres following a known distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>N</strong> (<em>int</em>) – Number of fibres to draw. More makes the image darker.</p></li>
+<li><p><strong>theta_mean</strong> (<em>float</em>) – An angle between 0 and 2 pi that is the average fibre orientation.</p></li>
+<li><p><strong>kappa</strong> (<em>float</em>) – A number greater than 0 that defines the alignment of the particles. kappa -&gt; inf is perfectly aligned, kappa -&gt; 0 is heterogeneous. This parameter is used in the vonmises circular distribution to generate random angles.</p></li>
+<li><p><strong>dpi</strong> (<em>int</em>) – Resolution of final image</p></li>
+<li><p><strong>lw</strong> (<em>int</em>) – Width of fibres in image</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – Transparency of the fibres. Default is 0.2.</p></li>
+<li><p><strong>foldername</strong> (<em>path</em>) – Where to export the saved frames to. By default the current path</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Saves a file called <cite>fibres_theta_kappa_N.png</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pynamix.data.pendulum">
 <code class="sig-prename descclassname">pynamix.data.</code><code class="sig-name descname">pendulum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.data.pendulum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the default dataset of a pendulum swinging, recorded on a DEXELA detector at 4x4 binnging (see the logfile for more information)</p>
@@ -71,6 +93,12 @@
 <p class="admonition-title">Warning</p>
 <p>THIS DATA DOES NOT EXIST YET. FRANCOIS THIS IS YOUR JOB.</p>
 </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.data.spiral">
+<code class="sig-prename descclassname">pynamix.data.</code><code class="sig-name descname">spiral</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.data.spiral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate an image of a spiral to use for calibration purposes</p>
 </dd></dl>
 
 </div>
@@ -96,7 +124,7 @@
 <dl class="function">
 <dt id="pynamix.exposure.clamp">
 <code class="sig-prename descclassname">pynamix.exposure.</code><code class="sig-name descname">clamp</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">vmin</em>, <em class="sig-param">vmax</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.exposure.clamp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Clamp an image between two values, masking it outside of those values.</p>
+<dd><p>Clamp an image between two values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -106,10 +134,10 @@
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The same data as the original, but with masked values outside of the defined range.</p>
+<dd class="field-even"><p>The same data as the original, but with no values outside of the defined range.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>masked_data (masked ND array)</p>
+<dd class="field-odd"><p>clamped_data (ND array)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -203,6 +231,20 @@
 <li><p>v (3D array): The vertical velocity of each patch. Has the shape [nt,nx,y].</p></li>
 </ul>
 </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.io.load_image">
+<code class="sig-prename descclassname">pynamix.io.</code><code class="sig-name descname">load_image</code><span class="sig-paren">(</span><em class="sig-param">filename</em>, <em class="sig-param">as_gray=True</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.io.load_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load an image and put it into an appropriate format so that it can be used by any pynamix function. Returns an empty logfile too.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – location of image to load.</p></li>
+<li><p><strong>as_gray</strong> (<em>bool</em>) – whether or not to convert the image to grayscale. If not, you will need to do this manually to be able to pass this image into other functions.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -405,6 +447,33 @@
 </dd></dl>
 
 <dl class="function">
+<dt id="pynamix.measure.grid">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">grid</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">logfile</em>, <em class="sig-param">xstep</em>, <em class="sig-param">ystep</em>, <em class="sig-param">patchw</em>, <em class="sig-param">mode='bottom-left'</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate two 1D vectors that grid an image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
+<li><p><strong>logfile</strong> – The logfile.</p></li>
+<li><p><strong>xstep</strong> (<em>int</em>) – The half width of the patch.</p></li>
+<li><p><strong>ystep</strong> (<em>int</em>) – The half width of the patch.</p></li>
+<li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – bottom-left or centre. Either bottom/left aligned or centred in the image.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>centred mode not implemented yet</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The radial hanning window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pynamix.measure.hanning_window">
 <code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">hanning_window</code><span class="sig-paren">(</span><em class="sig-param">patchw=32</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.hanning_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute a radial hanning window.</p>
@@ -434,23 +503,27 @@
 
 <dl class="function">
 <dt id="pynamix.measure.orientation_map">
-<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">orientation_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">logfile</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em>, <em class="sig-param">normalisation=&lt;function mean_std&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.orientation_map" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">orientation_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">logfile</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em>, <em class="sig-param">normalisation=&lt;function mean_std&gt;</em>, <em class="sig-param">padding_mode=None</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.orientation_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the principal orientation and orientation magnitude at a set of patches in images in a series.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
+<li><p><strong>logfile</strong> – The logfile.</p></li>
 <li><p><strong>tmin</strong> (<em>int</em>) – First frame to analyse in the series</p></li>
 <li><p><strong>tmax</strong> (<em>int</em>) – Last frame to analyse in the series</p></li>
 <li><p><strong>tstep</strong> (<em>int</em>) – Spacing between frames to analyse</p></li>
 <li><p><strong>xstep</strong> (<em>int</em>) – Spacing between patches in the x direction</p></li>
 <li><p><strong>ystep</strong> (<em>int</em>) – Spacing between patches in the y direction</p></li>
 <li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
+<li><p><strong>normalisation</strong> – Which normalisation to use.</p></li>
+<li><p><strong>padding_mode</strong> – What to use for data points outside the experimental domain. Pick one from the list from the documentation of <cite>numpy.pad</cite> or None (default)</p></li>
+<li><p><strong>verbose</strong> – (int): How noisy this function should be. 0 for nothing (default), 1 for text updates, 2 for figures.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ol class="arabic simple">
-<li><p>the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the principal orientation and (4) the orientation magnitude for each patch.</p></li>
+<li><p>the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the principal orientation and (4) the orientation magnitude for each patch. By default, pads with empty numbers to return NaNs.</p></li>
 </ol>
 </p>
 </dd>
@@ -486,6 +559,65 @@
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>Four arrays which describe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.measure.validate_velocities">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">validate_velocities</code><span class="sig-paren">(</span><em class="sig-param">u</em>, <em class="sig-param">v</em>, <em class="sig-param">threshold=2</em>, <em class="sig-param">sigma=1</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.validate_velocities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate a velocity field so that it is within a tolerance of the gaussian smoothed value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u</strong> (<em>nd array</em>) – horizontal velocity field</p></li>
+<li><p><strong>v</strong> (<em>nd array</em>) – vertical velocity field</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – How many times larger/smaller a value should be for it to be masked</p></li>
+<li><p><strong>sigma</strong> (<em>float</em>) – Width of gaussian blurring to define mean field</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Masked u and v arrays.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pynamix.measure.velocity_map">
+<code class="sig-prename descclassname">pynamix.measure.</code><code class="sig-name descname">velocity_map</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">logfile</em>, <em class="sig-param">tmin=0</em>, <em class="sig-param">tmax=None</em>, <em class="sig-param">tstep=1</em>, <em class="sig-param">searchw=4</em>, <em class="sig-param">xstep=32</em>, <em class="sig-param">ystep=32</em>, <em class="sig-param">patchw=32</em>, <em class="sig-param">zoomvalue=10</em>, <em class="sig-param">normalisation=&lt;function mean_std&gt;</em>, <em class="sig-param">padding_mode='edge'</em>, <em class="sig-param">verbose=0</em><span class="sig-paren">)</span><a class="headerlink" href="#pynamix.measure.velocity_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the velocity field at a set of patches between two images in a series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – The source data. Should be in the shape [nt,nx,ny]</p></li>
+<li><p><strong>logfile</strong> – The logfile.</p></li>
+<li><p><strong>tmin</strong> (<em>int</em>) – First frame to analyse in the series</p></li>
+<li><p><strong>tmax</strong> (<em>int</em>) – Last frame to analyse in the series (velocities at this frame will not be calculated)</p></li>
+<li><p><strong>tstep</strong> (<em>int</em>) – Spacing between frames to analyse</p></li>
+<li><p><strong>xstep</strong> (<em>int</em>) – Spacing between patches in the x direction</p></li>
+<li><p><strong>ystep</strong> (<em>int</em>) – Spacing between patches in the y direction</p></li>
+<li><p><strong>searchw</strong> (<em>int</em>) – Half width of search area</p></li>
+<li><p><strong>patchw</strong> (<em>int</em>) – The half width of the patch.</p></li>
+<li><p><strong>zoom</strong> (<em>int</em>) – Zoom level for subpixel resolution.</p></li>
+<li><p><strong>normalisation</strong> – Which normalisation to use.</p></li>
+<li><p><strong>padding_mode</strong> – What to use for data points outside the experimental domain. Pick one from “fill”, “wrap” or “symm”</p></li>
+<li><p><strong>verbose</strong> (<em>int</em>) – 0 for nothing. 1 for text. 2 for graphs.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>THIS WORKS VERY POORLY AND SLOWLY - NOTE SURE WHY!!</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ol class="arabic simple">
+<li><p>the x location of the centre of each patch, (2) the y location of the centre of each patch, (3) the x velocity (4) the y velocity. By default, pads with empty numbers to return NaNs.</p></li>
+</ol>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Four 2D arrays which describe</p>
 </dd>
 </dl>
 </dd></dl>

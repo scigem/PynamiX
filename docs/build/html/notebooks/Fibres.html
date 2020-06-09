@@ -241,7 +241,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">skimage.color</span> <span class="k">import</span> <span class="n">rgb2gray</span>
+<span class="c1"># from skimage.color import rgb2gray</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">pynamix</span> <span class="k">import</span> <span class="n">io</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">measure</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">plotting</span><span class="p">,</span> <span class="n">exposure</span>
@@ -259,9 +259,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">io</span><span class="o">.</span><span class="n">download_file</span><span class="p">(</span><span class="s1">&#39;https://thumbs.dreamstime.com/b/hypnos-circles-concentric-abstract-texture-vector-illustration-hypnotic-swirl-spiral-background-137959483.jpg&#39;</span><span class="p">,</span><span class="s1">&#39;spiral.jpg&#39;</span><span class="p">)</span> <span class="c1"># download an image from the internet</span>
-<span class="n">im</span> <span class="o">=</span> <span class="n">rgb2gray</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">&#39;spiral.jpg&#39;</span><span class="p">))</span> <span class="c1"># load an image and convert to grayscale</span>
-<span class="n">logfile</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># needed for loading/manipulating radiographs, not used here</span>
-<span class="n">ims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">im</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># make into a 3D array to conform with pynamix convention</span>
+<span class="n">ims</span><span class="p">,</span> <span class="n">logfile</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="s1">&#39;spiral.jpg&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
