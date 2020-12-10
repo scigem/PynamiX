@@ -126,7 +126,7 @@ def load_image(filename, as_gray=True):
     im = plt.imread(filename)  # load an image
     if as_gray:  # convert to grayscale
         im = rgb2gray(im)
-    logfile = {}  # needed for loading/manipulating radiographs, not used here
+    logfile = {"detector": {}, "geometry": {}, "X-rays": {}}
     ims = np.expand_dims(
         im, 0
     )  # make into a 3D array to conform with pynamix convention
@@ -206,7 +206,7 @@ def upgrade_logfile(filename):
         json.dump(log, new, indent=2)
 
 
-def write_seq(filename, data):
+def write_seq(filename, data, logfile):
     """
     Write an SEQ file and corresponding logfile from a 3D numpy array.
 
