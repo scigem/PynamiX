@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
 from matplotlib.cm import inferno
 from imageio import imwrite
-from pynamix.exposure import *
+from pynamix import exposure
 from skimage.color import rgb2gray
 
 
