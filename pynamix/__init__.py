@@ -4,6 +4,6 @@ from .exposure import *
 from .io import *
 from .measure import *
 from .plotting import *
-from .testing import *
+from .tests import *
 
-__all__ = ["color", "data", "exposure", "io", "measure", "plotting", "testing"]
+__all__ = ["color", "data", "exposure", "io", "measure", "plotting", "tests"]
