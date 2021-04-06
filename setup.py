@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pynamix",
-    version="0.2",
+    version="0.3",
     description="Tools for dealing with radiographs produced in DynamiX",
     url="http://github.sydney.edu.au/scigem/pynamix",
     author="Benjy Marks, François Guillard",

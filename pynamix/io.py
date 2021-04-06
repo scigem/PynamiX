@@ -272,22 +272,19 @@ def generate_seq(filename, detector, mode, nbframe=10):
 def save_as_tiffs(
     foldername,
     data,
-    vmin=0,
-    vmax=65535,
     angle=0,
     colour=False,
-    normalisation=no_normalisation,
+    normalisation=exposure.no_normalisation,
     tmin=0,
     tmax=None,
     tstep=1,
+    dtype=np.uint16
 ):
     """Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.
 
     Args:
         foldername (str): Location to save tiffs into. If this folder does not exist, it will be created for you. including or excluding the file format.
         data (array): The data loaded as a 3D numpy array with dimensions [nt,nx,ny]
-        vmin (int): Minimum value to show in tiff
-        vmax (int): Maximum value to show in tiff
         angle (float): Angle in degrees to rotate the images
         colour (bool): Flag to save the image in colour instead of grayscale
         logscale (bool): Flag to save the image using a logscale for the colours
@@ -300,7 +297,7 @@ def save_as_tiffs(
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
-    for t in range(tmin, tmax, tstep):
+    for t in progressbar(range(tmin, tmax, tstep)):
         im = data[t].astype(np.float)
         im = normalisation(im)
         if angle != 0:
@@ -320,7 +317,7 @@ def save_as_tiffs(
         #     im *= 255
 
         if not colour:
-            imwrite(foldername + "/" + str(t).zfill(5) + ".tiff", im.astype(np.uint16))
+            imwrite(foldername + "/" + str(t).zfill(5) + ".tiff", im.astype(dtype))
         else:
             plt.clf()
             plt.imsave(foldername + "/" + str(t).zfill(5) + ".tiff", im, cmap=inferno)
