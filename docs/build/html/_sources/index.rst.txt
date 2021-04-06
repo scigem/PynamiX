@@ -19,6 +19,8 @@ There are also some jupyter notebook included in the package that contains a hel
    notebooks/PynamiX-Examples
    notebooks/Fibres
    notebooks/Eranga
+   notebooks/NormaliseRotation
+   notebooks/OpticalRadiographs
 
 Indices and tables
 ==================

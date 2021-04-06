@@ -19,11 +19,11 @@ sys.path.insert(0, os.path.abspath('.'))
 # -- Project information -----------------------------------------------------
 
 project = 'PynamiX'
-copyright = '2019, Benjy Marks'
+copyright = '2021, Benjy Marks'
 author = 'Benjy Marks, François Guillard'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.3'
+release = '0.3'
 
 
 # -- General configuration ---------------------------------------------------

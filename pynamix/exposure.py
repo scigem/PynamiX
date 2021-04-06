@@ -201,9 +201,6 @@ def normalise_scan_by_flat_field(scan_path, flat_field_path, outfile_path, verbo
         flat_field_path (path): The location of the flat field seq/logfile. Can be a time series or a single frame. Will be averaged if a time series.
         outfile_path (path): The location to ouput a series of normalised tiff files
         verbose (bool): Verbosity.
-
-    Returns:
-        normalised_data (ND array): The same data as the original, but with the background removed.
     """
     bg, bg_log = io.load_seq(flat_field_path)
     if len(bg.shape) == 3: bg = np.mean(bg, axis=0)
