@@ -1,4 +1,5 @@
 import numpy as np
+from pynamix import io
 from progressbar import progressbar
 
 def mean_std(im):
@@ -190,3 +191,30 @@ def normalise_rotation(fg_data, fg_logfile, bg_data, bg_logfile, verbose=False):
                 plt.show()
 
     return normalised_data
+
+def normalise_scan_by_flat_field(scan_path, flat_field_path, outfile_path, verbose=False):
+    """
+    Normalise a scan by a flat field.
+
+    Args:
+        scan_path (path): The location of the scan seq/logfile.
+        flat_field_path (path): The location of the flat field seq/logfile. Can be a time series or a single frame. Will be averaged if a time series.
+        outfile_path (path): The location to ouput a series of normalised tiff files
+        verbose (bool): Verbosity.
+
+    Returns:
+        normalised_data (ND array): The same data as the original, but with the background removed.
+    """
+    bg, bg_log = io.load_seq(flat_field_path)
+    if len(bg.shape) == 3: bg = np.mean(bg, axis=0)
+    fg, fg_log = io.load_seq(scan_path)
+    fg_log = set_motion_limits(fg, fg_log, verbose=verbose)
+    _,nx,ny = fg.shape
+    nt = fg_log['end_frame'] - fg_log['start_frame']
+    data = np.zeros([nt,nx,ny])
+
+    with np.errstate(divide='ignore',invalid='ignore'):
+        for i in progressbar(range(nt)):
+            data[i] = fg[fg_log['start_frame'] + i]/bg
+
+    io.save_as_tiffs(outfile_path,data,dtype='<f4')
