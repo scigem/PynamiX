@@ -111,7 +111,7 @@ def set_motion_limits(data, logfile, threshold=False, verbose=False):
         threshold = (1-alpha)*diff.max() + alpha*diff.min()
     moving = diff > threshold
 
-    logfile['start_frame'] = int(np.nonzero(moving)[0][0] - 1)
+    logfile['start_frame'] = int(np.nonzero(moving)[0][0] - 1) # numpy.int64 is a struggle to JSONify
     logfile['end_frame']   = int(np.nonzero(moving)[0][-1])
 
     if verbose:
@@ -169,8 +169,8 @@ def normalise_rotation(fg_data, fg_logfile, bg_data, bg_logfile, verbose=False):
     bg_angles = np.array(bg_logfile['detector']['angles'])
 
     with np.errstate(divide='ignore',invalid='ignore'):
-        for i,frame in progressbar(enumerate(range(fg_logfile['start_frame'],
-                                                   fg_logfile['end_frame']))):
+        for i in progressbar(range(nt)):
+            frame = fg_logfile['start_frame'] + i
             fg_angle = fg_logfile['detector']['angles'][frame]%360
 
             j = np.nanargmin(np.abs(fg_angle - bg_angles))

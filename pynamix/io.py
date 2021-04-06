@@ -6,7 +6,7 @@ from matplotlib.cm import inferno
 from imageio import imwrite
 from pynamix import exposure
 from skimage.color import rgb2gray
-
+from progressbar import progressbar
 
 def strip_seq_log(filename):
     """
