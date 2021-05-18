@@ -8,6 +8,7 @@ from pynamix import exposure
 from skimage.color import rgb2gray
 from progressbar import progressbar
 
+
 def strip_seq_log(filename):
     """
     Clean up filename by removing trailing .seq or .log
@@ -54,17 +55,13 @@ def load_seq(filename, varian=False):
                         logfile = json.load(g)
 
                         nt = len(logfile["detector"]["frames"])
-                        nx = logfile["detector"]["image_size"][
-                            "height"
-                        ]  # in landscape mode by default
+                        nx = logfile["detector"]["image_size"]["height"]  # in landscape mode by default
                         ny = logfile["detector"]["image_size"]["width"]
                         try:
                             data = data.reshape(nt, nx, ny)
                         except:
                             data = data.reshape(-1, nx, ny)
-                            print(
-                                "WARNING: WRONG NUMBER OF FRAMES IN LOG FILE. THIS IS VERY BAD."
-                            )
+                            print("WARNING: WRONG NUMBER OF FRAMES IN LOG FILE. THIS IS VERY BAD.")
                         if logfile["detector"]["rotate"] == 0:  # landscape
                             pass
                         if logfile["detector"]["rotate"] >= 1:  # portrait
@@ -127,9 +124,7 @@ def load_image(filename, as_gray=True):
     if as_gray:  # convert to grayscale
         im = rgb2gray(im)
     logfile = {"detector": {}, "geometry": {}, "X-rays": {}}
-    ims = np.expand_dims(
-        im, 0
-    )  # make into a 3D array to conform with pynamix convention
+    ims = np.expand_dims(im, 0)  # make into a 3D array to conform with pynamix convention
     return ims, logfile
 
 
@@ -188,18 +183,14 @@ def upgrade_logfile(filename):
             elif l[0] == "\n":
                 pass
             else:
-                log["detector"]["frames"].append(
-                    [len(log["detector"]["frames"]), int(l[0]), 0]
-                )
+                log["detector"]["frames"].append([len(log["detector"]["frames"]), int(l[0]), 0])
 
     log["detector"]["rotate"] = 0
     log["detector"]["length"] = {}
     log["detector"]["length"]["width"] = 195.0
     log["detector"]["length"]["height"] = 244.0
     log["detector"]["length"]["unit"] = "mm"
-    log["detector"]["resolution"] = (
-        log["detector"]["length"]["height"] / log["detector"]["image_size"]["height"]
-    )
+    log["detector"]["resolution"] = log["detector"]["length"]["height"] / log["detector"]["image_size"]["height"]
 
     os.rename(filename + ".log", filename + ".log.dep")
     with open(filename + ".log", "w") as new:
@@ -258,9 +249,7 @@ def generate_seq(filename, detector, mode, nbframe=10):
             w /= 4
             h /= 4
 
-    pattern = np.linspace(
-        0, 256 * 256 - 1, num=w * h, dtype="<u2"
-    )  # Little endian 2 bytes unsigned
+    pattern = np.linspace(0, 256 * 256 - 1, num=w * h, dtype="<u2")  # Little endian 2 bytes unsigned
 
     with open(filename + ".seq", "wb") as f:
         delta = int(w * h / nbframe)
@@ -278,7 +267,7 @@ def save_as_tiffs(
     tmin=0,
     tmax=None,
     tstep=1,
-    dtype=np.uint16
+    dtype=np.uint16,
 ):
     """Convert an appropriately shaped SEQ file into TIFF files. Optionally takes an angle to rotate the images by.
 
@@ -346,9 +335,7 @@ def load_PIVLab_txtfiles(foldername, tmin=0, tmax=None, tstep=1):
         u = np.load(foldername + "u_PIV.npy")
         v = np.load(foldername + "v_PIV.npy")
     else:
-        print(
-            "WARNING: Converting txtfiles to numpy arrays for faster loading next time."
-        )
+        print("WARNING: Converting txtfiles to numpy arrays for faster loading next time.")
         files = glob.glob(foldername + "/*.txt")
         files = sorted(files)
         nt = len(files)

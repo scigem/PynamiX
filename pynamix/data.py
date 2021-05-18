@@ -4,9 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pynamix.io import load_seq, download_file
 
-_PYNAMIX_ROOT = os.path.abspath(pynamix.__file__)[
-    :-19
-]  # location where pynamix has been installed to
+_PYNAMIX_ROOT = os.path.abspath(pynamix.__file__)[:-19]  # location where pynamix has been installed to
 
 
 def pendulum():
@@ -15,19 +13,13 @@ def pendulum():
     .. warning:: THIS DATA DOES NOT EXIST YET. FRANCOIS THIS IS YOUR JOB.
     """
     if not os.path.exists("pendulum.seq"):
-        response = input(
-            "Data does not exist locally. Do you want to download it? This may take a while (y/n) "
-        )
+        response = input("Data does not exist locally. Do you want to download it? This may take a while (y/n) ")
         if (response == "y") or (response == "Y"):
             # if not os.path.exists(_PYNAMIX_ROOT + 'data/'): os.mkdir(_PYNAMIX_ROOT + 'data/')
             # download_file('http://www.benjymarks.com/pynamix/data/Test2.log',_PYNAMIX_ROOT + 'data/pendulum.log')
             # download_file('http://www.benjymarks.com/pynamix/data/Test2.log',_PYNAMIX_ROOT + 'data/pendulum.seq')
-            download_file(
-                "http://www.benjymarks.com/pynamix/data/pendulum.log", "pendulum.log"
-            )
-            download_file(
-                "http://www.benjymarks.com/pynamix/data/pendulum.seq", "pendulum.seq"
-            )
+            download_file("http://www.benjymarks.com/pynamix/data/pendulum.log", "pendulum.log")
+            download_file("http://www.benjymarks.com/pynamix/data/pendulum.seq", "pendulum.seq")
             print("Data successfully downloaded")
         else:
             raise Exception("Built in data file does not exist")
@@ -97,14 +89,7 @@ def fibres(theta_mean=0.0, kappa=1.0, N=500, dpi=200, lw=4, alpha=0.2, foldernam
     plt.yticks([])
     plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
     plt.savefig(
-        foldername
-        + "/fibres_"
-        + str(theta_mean)
-        + "_"
-        + str(kappa)
-        + "_"
-        + str(N)
-        + ".png",
+        foldername + "/fibres_" + str(theta_mean) + "_" + str(kappa) + "_" + str(N) + ".png",
         dpi=dpi,
     )
 

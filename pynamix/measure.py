@@ -113,16 +113,10 @@ def angular_binning(patchw=32, N=10000):
     Returns:
         4D array: An array n_maskQ that stores Q(k) coefficients in a 4D table such that Q(kx, ky)=n_maskQ(kx,ky,:,:)
     """
-    if os.path.exists(
-        module_loc + "defaults/n_maskQ_" + str(patchw) + "_" + str(N) + ".npy"
-    ):
-        n_maskQ = np.load(
-            module_loc + "defaults/n_maskQ_" + str(patchw) + "_" + str(N) + ".npy"
-        )
+    if os.path.exists(module_loc + "defaults/n_maskQ_" + str(patchw) + "_" + str(N) + ".npy"):
+        n_maskQ = np.load(module_loc + "defaults/n_maskQ_" + str(patchw) + "_" + str(N) + ".npy")
     else:
-        print(
-            "WARNING: Haven't cached these Q coefficients. Run will take longer this time."
-        )
+        print("WARNING: Haven't cached these Q coefficients. Run will take longer this time.")
         K = np.zeros([N, 2])
         n_nbmaskQ = np.zeros([patchw * 2, patchw * 2])
         n_maskQ = np.zeros([patchw * 2, patchw * 2, 2, 2])
@@ -152,36 +146,9 @@ def angular_binning(patchw=32, N=10000):
 
 
 def radial_grid(rnb=200, patchw=32, N=10000):  # validated against MATLAB code
-    if os.path.exists(
-        module_loc
-        + "defaults/r_grid_"
-        + str(rnb)
-        + "_"
-        + str(patchw)
-        + "_"
-        + str(N)
-        + ".npy"
-    ):
-        r_grid = np.load(
-            module_loc
-            + "defaults/r_grid_"
-            + str(rnb)
-            + "_"
-            + str(patchw)
-            + "_"
-            + str(N)
-            + ".npy"
-        )
-        nr_pxr = np.load(
-            module_loc
-            + "defaults/nr_pxr_"
-            + str(rnb)
-            + "_"
-            + str(patchw)
-            + "_"
-            + str(N)
-            + ".npy"
-        )
+    if os.path.exists(module_loc + "defaults/r_grid_" + str(rnb) + "_" + str(patchw) + "_" + str(N) + ".npy"):
+        r_grid = np.load(module_loc + "defaults/r_grid_" + str(rnb) + "_" + str(patchw) + "_" + str(N) + ".npy")
+        nr_pxr = np.load(module_loc + "defaults/nr_pxr_" + str(rnb) + "_" + str(patchw) + "_" + str(N) + ".npy")
     else:
         r_grid = np.linspace(0, patchw * 1.5, rnb)
         nr_px = np.zeros([patchw * 2, patchw * 2])
@@ -200,25 +167,11 @@ def radial_grid(rnb=200, patchw=32, N=10000):  # validated against MATLAB code
             nr_pxr[:, :, i] /= nr_px
         r_grid += np.mean(np.diff(r_grid)) * 0.5
         np.save(
-            module_loc
-            + "defaults/r_grid_"
-            + str(rnb)
-            + "_"
-            + str(patchw)
-            + "_"
-            + str(N)
-            + ".npy",
+            module_loc + "defaults/r_grid_" + str(rnb) + "_" + str(patchw) + "_" + str(N) + ".npy",
             r_grid,
         )
         np.save(
-            module_loc
-            + "defaults/nr_pxr_"
-            + str(rnb)
-            + "_"
-            + str(patchw)
-            + "_"
-            + str(N)
-            + ".npy",
+            module_loc + "defaults/nr_pxr_" + str(rnb) + "_" + str(patchw) + "_" + str(N) + ".npy",
             nr_pxr,
         )
     return r_grid, nr_pxr
@@ -333,12 +286,8 @@ def radial_FFT(
 
     nt, nx, ny = data.shape
 
-    gridx = np.arange(
-        patchw, nx - patchw, xstep
-    )  # locations of centres of patches in x direction
-    gridy = np.arange(
-        patchw, ny - patchw, ystep
-    )  # locations of centres of patches in y direction
+    gridx = np.arange(patchw, nx - patchw, xstep)  # locations of centres of patches in x direction
+    gridy = np.arange(patchw, ny - patchw, ystep)  # locations of centres of patches in y direction
     if tmax is None:
         tmax = nt  # optionally set end time
 
@@ -359,9 +308,7 @@ def radial_FFT(
                 S = np.fft.fftshift(np.abs(np.fft.fft2(patch * w) ** 2))
 
                 for k in range(rnb):
-                    radialspec[t, i, j, k] = np.sum(
-                        S * nr_pxr[:, :, k]
-                    )  # ortho-radially SUMMED power spectral density
+                    radialspec[t, i, j, k] = np.sum(S * nr_pxr[:, :, k])  # ortho-radially SUMMED power spectral density
                     # radialspec[k,n]=np.sum(S*nr_pxr[:,:,k])  # ortho-radially SUMMED power spectral density - JUST FOR PLOTTING DURING TESTING
                 # n += 1
 
@@ -418,15 +365,9 @@ def average_size_map(
     )
 
     if wmin == None:
-        wmin = (
-            2 / logfile["detector"]["resolution"]
-        )  # use Nyquist frequency - i.e. 2 pixels per particle
-    min_val = np.argmin(
-        np.abs(wavelength - wmax)
-    )  # this is large wavelength, wavelength is sorted large to small
-    max_val = np.argmin(
-        np.abs(wavelength - wmin)
-    )  # this is small wavelength, wavelength is sorted large to small
+        wmin = 2 / logfile["detector"]["resolution"]  # use Nyquist frequency - i.e. 2 pixels per particle
+    min_val = np.argmin(np.abs(wavelength - wmax))  # this is large wavelength, wavelength is sorted large to small
+    max_val = np.argmin(np.abs(wavelength - wmin))  # this is small wavelength, wavelength is sorted large to small
     # print(wavelength[min_val],wavelength[max_val])
     average_size_index = np.argmax(radialspec[:, :, :, min_val:max_val], axis=3)
     average_size_index += min_val
@@ -585,9 +526,7 @@ def velocity_map(
     """
     print("WARNING: Do not use this function it is pretty garbage.")
     nt, nx, ny = data.shape
-    px_per_frame_to_mm_per_s = (
-        tstep * logfile["detector"]["resolution"] / logfile["detector"]["fps"]
-    )
+    px_per_frame_to_mm_per_s = tstep * logfile["detector"]["resolution"] / logfile["detector"]["fps"]
 
     if tmax is None:
         tmax = nt  # optionally set end time
@@ -651,12 +590,8 @@ def velocity_map(
                     # C = convolve(search_window, this_patch)
                     ybest, xbest = np.unravel_index(np.argmax(C), C.shape)
                     if C[ybest, xbest] > 0:  # pick a random threshold for badness
-                        u[t, i, j] = (
-                            ybest - searchw * zoomvalue
-                        ) * px_per_frame_to_mm_per_s
-                        v[t, i, j] = (
-                            -(xbest - searchw * zoomvalue) * px_per_frame_to_mm_per_s
-                        )
+                        u[t, i, j] = (ybest - searchw * zoomvalue) * px_per_frame_to_mm_per_s
+                        v[t, i, j] = -(xbest - searchw * zoomvalue) * px_per_frame_to_mm_per_s
                     if verbose == 2:
                         plt.ion()
                         plt.clf()
@@ -716,9 +651,7 @@ if __name__ == "__main__":
     logfile["detector"]["resolution"] = 1
     logfile["detector"]["fps"] = 1
     data = np.random.rand(2, 200, 300)
-    X, Y = np.meshgrid(
-        np.arange(data.shape[1]), np.arange(data.shape[2]), indexing="ij"
-    )
+    X, Y = np.meshgrid(np.arange(data.shape[1]), np.arange(data.shape[2]), indexing="ij")
     data[0] += X / 50
     data[1] = data[0]
     data[1] = np.roll(data[1], 1, axis=0)
@@ -759,7 +692,9 @@ if __name__ == "__main__":
     plt.clf()
 
     plt.pcolormesh(
-        X, Y, data[0],
+        X,
+        Y,
+        data[0],
     )
     plt.quiver(x, y, u[0], v[0], color="g")
     # plt.quiver(x, y, u2[0], v2[0], color="k")
