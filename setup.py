@@ -32,7 +32,8 @@ setuptools.setup(
         "nbsphinx",
         "pandoc",
         "pre-commit",
-        "astropy"
+        "astropy",
+        "progressbar2"
     ],
     include_package_data=True,
 )
