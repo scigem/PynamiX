@@ -1,6 +1,6 @@
 # PynamiX
 
-[Documentation here](https://pages.github.sydney.edu.au/scigem/PynamiX/build/html/index.html) (requires login, contact [Benjy](mailto:benjy.marks@sydney.edu.au) for access, or compile it yourself following the details below).
+[Documentation here](https://scigem.github.io/PynamiX/build/html/index.html), or compile it yourself following the details below).
 
 ## Installation
 Work in progress. Hopefully via `pip install pynamix` but YMMV. If installing from github, try cloning and then running:
