@@ -1,5 +1,8 @@
 # PynamiX
 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+ [![Downloads](https://pepy.tech/badge/pynamix/month)](https://pepy.tech/project/pynamix)
+
 [Documentation here](https://scigem.github.io/PynamiX/build/html/index.html), or compile it yourself following the details below).
 
 ## Installation
