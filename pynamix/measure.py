@@ -2,6 +2,7 @@ import os, pynamix
 import numpy as np
 from astropy.convolution import convolve
 from scipy.signal import correlate2d
+from scipy.stats import linregress
 from scipy.ndimage import zoom, gaussian_filter
 from pynamix.exposure import *
 
@@ -642,9 +643,57 @@ def validate_velocities(u, v, threshold=2, sigma=1):
     v_filtered = np.ma.masked_where(mask, v)
     return u_filtered, v_filtered
 
+#======================= Andres ================================================
+def surface_elevation_sideview(data, scale, min_height=-1, threshold=-1):
+    """
+    Detect the free surface by finding the highest point below the threshold accross the width of the data provided. Gravity should be in the direction of increasing first dimension. 
 
+    Args:
+        data: The source data. Should be in the shape [ny,nx]
+        scale: mm/px conversion.
+        min_height: line from which to compute elevation. There should only be material above that line. 
+        threshold: if value < threshold, we are inside the material. 
+    Returns:
+        Array of height vs. horizontal location.
+    """
+    res = np.zeros((2,data.shape[1])) ;
+    res[0,:] = [i*scale for i in range(0,data.shape[1])] ; 
+    if min_height==-1: 
+        min_height = data.shape[0] 
+    for i in range(0,data.shape[1]):
+        for j in range(min_height, -1, -1):
+            if data[j][i]>threshold :
+                res[1,i]= (min_height-j) * scale; 
+                break ; 
+    return res ; 
+
+def surface_absorption_calibration (free_surface_profile, top_absorption):
+    """
+    Fit the absorption for a set of thicknesses and absorption values. 
+    
+    Args:
+        free_surface_profile: thickness of the absorbing layer
+        top_absorption: corresponding transmitted xray intensity (not logged)
+    """
+    res=linregress(free_surface_profile, np.log(top_absorption)) ; 
+    return {'mu':res.slope, 'beta': res.intercept} ;
+
+def surface_elevation (data, absorption, sigma=0):
+    """
+    Returns the elevation calculated from the xray provided and the fitted absorption coefficients. 
+    
+    Args:
+        data: the xray radiograph
+        absorption: dictionary of absorption values as returned by `surface_absorption_calibration`
+        sigma: size of the gaussian filter to post-apply
+    """
+    ele = (1/absorption['mu'])*data- (absorption['beta']/absorption['mu']);
+    if sigma!=0:
+        ele=gaussian_filter(ele,6)
+    return ele
+    
 # Testing area
-if __name__ == "__main__":
+if __name__ == "__main__":    
     # Try with fake data - WORKS
     logfile = {}
     logfile["detector"] = {}
