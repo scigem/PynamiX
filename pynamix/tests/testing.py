@@ -1,16 +1,18 @@
 import unittest
 import numpy as np
 import matplotlib.pyplot as plt
-from pynamix import color, data, exposure, io, measure, plotting
-
+from pynamix import color, exposure, io, measure, plotting
+import pynamix.data
 
 class TestMeasure(unittest.TestCase):
     def testHanningWindow(self):
         """Test case A. note that all test method names must begin with 'test.'"""
         w = measure.hanning_window()
-        plt.imshow(w)
-        plt.colorbar()
-        plt.show()
+        mid_pt = int(len(w) / 2)
+        print(w)
+        # plt.imshow(w)
+        # plt.colorbar()
+        # plt.show()
 
     def testAngularBinning(self):
         """Test case A. note that all test method names must begin with 'test.'"""
@@ -45,7 +47,7 @@ class TestMeasure(unittest.TestCase):
         print(r_grid)
 
     def testRadialFFT(self):
-        data, logfile = io.pendulum()
+        data, logfile = pynamix.data.pendulum()
         data, logfile = exposure.apply_ROI(data, logfile, left=600)
         print(np.amax(data))
         data = exposure.clamp(data, 10000, 50000)

@@ -1,3 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pynamix"
+version = "0.31"
+description = "Tools for dealing with radiographs produced in DynamiX"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "GNU Lesser General Public License v3 or later (LGPLv3+)"}
+authors = [
+  {name = "Benjy Marks", email = "benjy.marks@sydney.edu.au"},
+  {name = "François Guillard", email = "francois.guillard@sydney.edu.au"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "imageio",
+    "scipy",
+    "scikit-image",
+    "ipykernel",
+    "ipywidgets",
+    "sphinx",
+    "nbsphinx",
+    "pandoc",
+    "pre-commit",
+    "astropy",
+    "progressbar2"
+]
+
+[project.urls]
+Homepage = "http://github.com/scigem/pynamix"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pynamix*"]
+
 [tool.black]
 line-length = 120
-target-version = ['py39']
+target-version = ['py311']

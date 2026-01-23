@@ -1,10 +1,13 @@
-import os, pynamix
+import sys
+import os
+import pynamix
 import numpy as np
 from astropy.convolution import convolve
 from scipy.signal import correlate2d
 from scipy.stats import linregress
 from scipy.ndimage import zoom, gaussian_filter
 from pynamix.exposure import *
+
 
 module_loc = pynamix.__file__[:-11]
 
@@ -554,7 +557,7 @@ def velocity_map(
             this_frame = np.pad(this_frame, pw, mode=padding_mode)
             next_frame = np.pad(next_frame, pw + sw, mode=padding_mode)
 
-            if zoom is not 1:  # how does this work with levels????
+            if zoom != 1:  # how does this work with levels????
                 # Linearly interpolate images
                 this_frame = zoom(this_frame, zoomvalue, order=1)
                 next_frame = zoom(next_frame, zoomvalue, order=1)

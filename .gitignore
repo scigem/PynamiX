@@ -3,3 +3,4 @@ pynamix.egg-info/
 dist/
 pynamix/defaults/*.npy
 docs/notebooks/.ipynb_checkpoints/
+venv/

@@ -8,10 +8,8 @@
 ## Installation
 Work in progress. Hopefully via `pip install pynamix` but YMMV. If installing from github, try cloning and then running:
 ```
-python3 setup.py build
-python3 setup.py install
+pip install -e .
 ```
-If you make any changes to the source code, re-run those two lines to have your changes reflected in your installed package.
 
 ## Examples
 Try out the included Jupyter notebook to see how to use the package.
@@ -43,7 +41,7 @@ A sorted implementation list is as follows:
     4. Wrapper for James's fake radiograph generator
 
 ## Deploying to PyPI (just a reminder for Benjy, please don't try this yourself)
-Run the following to make a new distribution and upload it to PyPI. **Note**: You first need to update the version number in `setup.py`.
+Run the following to make a new distribution and upload it to PyPI. **Note**: You first need to update the version number in `pyproject.toml`.
 ```
 python3 setup.py sdist
 twine upload dist/*
