@@ -103,9 +103,9 @@ class TestHanningWindow(unittest.TestCase):
         self.assertLess(w[63, 63], 0.01)
         
         # Check that window is zero or very small outside radius (patchw=32)
-        # Points at distance > 32 should be zero or nearly zero
-        self.assertLess(w[1, 32], 0.01)  # distance ~31, should be small
-        self.assertLess(w[63, 32], 0.01)  # distance ~31, should be small
+        # Points at distance > 32 from center (32, 32) should be zero or nearly zero
+        self.assertLess(w[1, 32], 0.01)  # distance from (32,32) to (1,32) is 31
+        self.assertLess(w[63, 32], 0.01)  # distance from (32,32) to (63,32) is 31
 
     def test_hanning_window_zero_outside_radius(self):
         """Test that hanning window is zero outside radius"""

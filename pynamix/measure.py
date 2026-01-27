@@ -134,12 +134,12 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
             y_offset = (y_end - y_start - y_span) / 2
             
             if nx_patches > 0:
-                gridx = np.arange(nx_patches + 1) * xstep + x_start + x_offset
+                gridx = np.arange(nx_patches) * xstep + x_start + x_offset
             else:
                 gridx = np.array([])
                 
             if ny_patches > 0:
-                gridy = np.arange(ny_patches + 1) * ystep + y_start + y_offset
+                gridy = np.arange(ny_patches) * ystep + y_start + y_offset
             else:
                 gridy = np.array([])
         else:
