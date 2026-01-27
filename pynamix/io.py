@@ -1,4 +1,9 @@
-import os, json, glob, requests, shutil, re
+import os
+import json
+import glob
+import requests
+import shutil
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
@@ -105,7 +110,7 @@ def load_radio_txtfiles(foldername, tmin=0, tmax=None):
     """
     files = glob.glob(foldername + "/*.txt")
     files = sorted(files)
-    if tmax == None:
+    if tmax is None:
         tmax = len(files)
 
     data = []
@@ -128,6 +133,9 @@ def load_image(filename, as_gray=True):
     """
     im = plt.imread(filename)  # load an image
     if as_gray:  # convert to grayscale
+        # Handle images with alpha channel or extra channels by keeping only RGB
+        if im.ndim == 3 and im.shape[2] > 3:
+            im = im[:, :, :3]  # Keep only RGB channels, discard alpha and any extra channels
         im = rgb2gray(im)
     logfile = {"detector": {}, "geometry": {}, "X-rays": {}}
     ims = np.expand_dims(im, 0)  # make into a 3D array to conform with pynamix convention
@@ -249,13 +257,13 @@ def generate_seq(filename, detector, mode, nbframe=10):
         w = 3072
         h = 3888
         if mode == 22:
-            w /= 2
-            h /= 2
+            w = w // 2
+            h = h // 2
         elif mode == 44:
-            w /= 4
-            h /= 4
+            w = w // 4
+            h = h // 4
 
-    pattern = np.linspace(0, 256 * 256 - 1, num=w * h, dtype="<u2")  # Little endian 2 bytes unsigned
+    pattern = np.linspace(0, 256 * 256 - 1, num=int(w * h), dtype="<u2")  # Little endian 2 bytes unsigned
 
     with open(filename + ".seq", "wb") as f:
         delta = int(w * h / nbframe)
@@ -287,13 +295,13 @@ def save_as_tiffs(
         tmax (int): Last frame to save
     """
     nt = data.shape[0]
-    if tmax == None:
+    if tmax is None:
         tmax = nt
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
     for t in progressbar(range(tmin, tmax, tstep)):
-        im = data[t].astype(np.float)
+        im = data[t].astype(float)
         im = normalisation(im)
         if angle != 0:
             im = np.rotate(im, angle=angle, mode="edge")
@@ -345,7 +353,7 @@ def load_PIVLab_txtfiles(foldername, tmin=0, tmax=None, tstep=1):
         files = glob.glob(foldername + "/*.txt")
         files = sorted(files)
         nt = len(files)
-        if tmax == None:
+        if tmax is None:
             tmax = nt
         if nt == 0:
             raise Exception("Did not find any text files in that folder")

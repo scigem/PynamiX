@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mplc
 
@@ -291,8 +292,6 @@ def virino2d(angles, magnitude):
 
 
 if __name__ == "__main__":
-    import numpy as np
-
     # cmap = virino()
     # plt.imshow(np.random.rand(30, 30), cmap=cmap)
     # plt.colorbar()
@@ -303,7 +302,7 @@ if __name__ == "__main__":
     x, y = np.meshgrid(x, y)
 
     theta = np.arctan2(y, x)
-    r = np.sqrt(x ** 2 + y ** 2)
+    r = np.sqrt(x**2 + y**2)
 
     angles = theta
     magnitude = r

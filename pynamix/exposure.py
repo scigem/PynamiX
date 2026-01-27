@@ -67,21 +67,21 @@ def apply_ROI(data, logfile, top=0, left=0, right=None, bottom=None):
     N = len(data.shape)  # number of dimensions
     if N == 2:
         nx, ny = data.shape
-        if right == None:
+        if right is None:
             right = nx
-        if bottom == None:
+        if bottom is None:
             bottom = ny
         data_ROI = data[left:right, top:bottom]
     elif N == 3:
         _, nx, ny = data.shape
-        if right == None:
+        if right is None:
             right = nx
-        if bottom == None:
+        if bottom is None:
             bottom = ny
         data_ROI = data[:, left:right, top:bottom]
     else:
         raise Exception("ROI only defined for 2D and 3D arrays")
-    if not "detector" in logfile:
+    if "detector" not in logfile:
         logfile["detector"] = {}
     logfile["detector"]["ROI_software"] = {}
     logfile["detector"]["ROI_software"]["top"] = top
@@ -109,13 +109,22 @@ def set_motion_limits(data, logfile, threshold=False, verbose=False):
     # diff = np.sqrt(np.mean(np.mean(np.square(rel_diff),axis=-1),axis=-1))
     diff = np.sqrt(np.mean(np.mean(np.square(data[1:] - data[:-1]), axis=-1), axis=-1))
 
-    if threshold == False:
+    if threshold is False:
         alpha = 0.9  # skew towards the lower end of the spectrum
         threshold = (1 - alpha) * diff.max() + alpha * diff.min()
     moving = diff > threshold
 
-    logfile["start_frame"] = int(np.nonzero(moving)[0][0] - 1)  # numpy.int64 is a struggle to JSONify
-    logfile["end_frame"] = int(np.nonzero(moving)[0][-1])
+    # Check if any motion was detected
+    moving_indices = np.nonzero(moving)[0]
+    if len(moving_indices) == 0:
+        # No motion detected, set to full range
+        logfile["start_frame"] = 0
+        logfile["end_frame"] = len(diff)
+    else:
+        logfile["start_frame"] = (
+            int(moving_indices[0] - 1) if moving_indices[0] > 0 else 0
+        )  # numpy.int64 is a struggle to JSONify
+        logfile["end_frame"] = int(moving_indices[-1])
 
     if verbose:
         import matplotlib.pyplot as plt
@@ -145,9 +154,17 @@ def set_angles_from_limits(logfile, max_angle=360):
 
     num_frames = len(logfile["detector"]["frames"])
     angles = np.nan * np.ones(num_frames)
-    angles[logfile["start_frame"] : logfile["end_frame"]] = (
-        np.linspace(0, max_angle, logfile["end_frame"] - logfile["start_frame"]) % 360
-    )
+
+    # Calculate number of frames in motion range
+    num_moving_frames = logfile["end_frame"] - logfile["start_frame"]
+
+    if num_moving_frames > 0:
+        # Use linspace with endpoint=False to get evenly spaced angles
+        # This ensures that if we have 80 frames from 0-360, each frame is exactly 4.5 degrees
+        angles[logfile["start_frame"] : logfile["end_frame"]] = (
+            np.linspace(0, max_angle, num_moving_frames, endpoint=False) % 360
+        )
+
     logfile["detector"]["frames"][:, 2] = angles
 
     return logfile
@@ -166,6 +183,9 @@ def normalise_rotation(fg_data, fg_logfile, bg_data, bg_logfile, verbose=False):
     Returns:
         normalised_data (ND array): The same data as the original, but with the background removed.
     """
+    if verbose:
+        import matplotlib.pyplot as plt
+
     nt, nx, ny = fg_data.shape
     # nt = fg_logfile['end_frame'] - fg_logfile['start_frame']
     # normalised_data = np.zeros([nt,nx,ny])
@@ -183,11 +203,11 @@ def normalise_rotation(fg_data, fg_logfile, bg_data, bg_logfile, verbose=False):
 
             j = np.nanargmin(np.abs(fg_angle - bg_angles))
 
-            normalised_data[i] = np.nan_to_num(fg_data[frame] / bg_data[j])
+            normalised_data[i] = np.nan_to_num(fg_data[i] / bg_data[j])
 
             if verbose:
                 plt.subplot(221)
-                plt.imshow(fg_data[frame])
+                plt.imshow(fg_data[i])
 
                 plt.subplot(222)
                 plt.imshow(bg_data[j])
