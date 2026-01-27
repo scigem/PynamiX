@@ -79,12 +79,12 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
             bottom_bound = logfile["detector"]["ROI"]["bottom"] - patchw
             
             # Ensure boundaries are within valid range and don't create empty arrays
-            if left_bound < right_bound and left_bound < nx:
+            if left_bound < right_bound and 0 <= left_bound < nx and 0 < right_bound <= nx:
                 gridx = np.arange(left_bound, min(right_bound, nx), xstep)
             else:
                 gridx = np.array([])
             
-            if top_bound < bottom_bound and top_bound < ny:
+            if top_bound < bottom_bound and 0 <= top_bound < ny and 0 < bottom_bound <= ny:
                 gridy = np.arange(top_bound, min(bottom_bound, ny), ystep)
             else:
                 gridy = np.array([])

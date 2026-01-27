@@ -141,6 +141,10 @@ class TestGrid(unittest.TestCase):
         gridx, gridy = measure.grid(data, logfile, xstep, ystep, patchw)
         
         # Grid should respect ROI boundaries (within the ROI region)
+        # Check that grids are non-empty before accessing elements
+        self.assertGreater(len(gridx), 0, "gridx should not be empty")
+        self.assertGreater(len(gridy), 0, "gridy should not be empty")
+        
         # gridx should start from left + patchw
         self.assertGreaterEqual(gridx[0], logfile["detector"]["ROI"]["left"] + patchw)
         # gridx should end before right - patchw
