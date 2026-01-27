@@ -134,13 +134,13 @@ class TestLoadImage(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.test_image = os.path.join(self.temp_dir, "test.png")
         
-        # Create a simple test image
+        # Create a simple test image without alpha channel
         import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 1, figsize=(2, 2))
-        ax.imshow([[0, 1], [1, 0]], cmap='gray')
-        ax.axis('off')
-        plt.savefig(self.test_image, bbox_inches='tight', pad_inches=0)
-        plt.close()
+        import numpy as np
+        
+        # Create simple grayscale data
+        data = np.array([[0, 0.5], [0.5, 1.0]])
+        plt.imsave(self.test_image, data, cmap='gray')
 
     def tearDown(self):
         """Clean up temporary files"""
@@ -191,7 +191,7 @@ class TestUpgradeLogfile(unittest.TestCase):
             f.write("\n")
             f.write("MODE 0\n")
             f.write("768x960\n")
-            f.write("ROI 0, 0 768 960\n")
+            f.write("ROI TOP 0 0, 768 960\n")  # Format: ROI TOP top left, right bottom
             f.write("FPS 30\n")
             f.write("\n")
             f.write("1000\n")

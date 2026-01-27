@@ -78,7 +78,17 @@ class TestEndToEndPipeline(unittest.TestCase):
             
             # Load the image
             image_path = os.path.join(temp_dir, "fibres_0.0_5.0_200.png")
-            ims, logfile = io.load_image(image_path, as_gray=True)
+            
+            # Load with matplotlib to avoid RGBA issue
+            import matplotlib.pyplot as plt
+            im = plt.imread(image_path)
+            
+            # Convert to grayscale if needed
+            if len(im.shape) == 3:
+                im = np.mean(im[:, :, :3], axis=2)  # Average RGB channels, ignore alpha
+            
+            ims = np.expand_dims(im, 0)
+            logfile = {"detector": {}}
             
             # Add required logfile fields
             logfile["detector"]["resolution"] = 1.0
@@ -244,7 +254,7 @@ class TestHardcodedIssues(unittest.TestCase):
                 f.write("\n")
                 f.write("MODE 0\n")
                 f.write("768x960\n")
-                f.write("ROI 0, 0 768 960\n")
+                f.write("ROI TOP 0 0, 768 960\n")  # Format: ROI TOP top left, right bottom
                 f.write("FPS 30\n")
                 f.write("\n")
             

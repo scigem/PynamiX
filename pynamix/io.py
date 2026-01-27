@@ -249,13 +249,13 @@ def generate_seq(filename, detector, mode, nbframe=10):
         w = 3072
         h = 3888
         if mode == 22:
-            w /= 2
-            h /= 2
+            w = w // 2
+            h = h // 2
         elif mode == 44:
-            w /= 4
-            h /= 4
+            w = w // 4
+            h = h // 4
 
-    pattern = np.linspace(0, 256 * 256 - 1, num=w * h, dtype="<u2")  # Little endian 2 bytes unsigned
+    pattern = np.linspace(0, 256 * 256 - 1, num=int(w * h), dtype="<u2")  # Little endian 2 bytes unsigned
 
     with open(filename + ".seq", "wb") as f:
         delta = int(w * h / nbframe)
