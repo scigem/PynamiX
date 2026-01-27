@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from pynamix import color, exposure, io, measure, plotting
 import pynamix.data
 
+
 class TestMeasure(unittest.TestCase):
     def testHanningWindow(self):
         """Test case A. note that all test method names must begin with 'test.'"""

@@ -1,4 +1,9 @@
-import os, json, glob, requests, shutil, re
+import os
+import json
+import glob
+import requests
+import shutil
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
@@ -105,7 +110,7 @@ def load_radio_txtfiles(foldername, tmin=0, tmax=None):
     """
     files = glob.glob(foldername + "/*.txt")
     files = sorted(files)
-    if tmax == None:
+    if tmax is None:
         tmax = len(files)
 
     data = []
@@ -290,7 +295,7 @@ def save_as_tiffs(
         tmax (int): Last frame to save
     """
     nt = data.shape[0]
-    if tmax == None:
+    if tmax is None:
         tmax = nt
     if not os.path.exists(foldername):
         os.makedirs(foldername)
@@ -348,7 +353,7 @@ def load_PIVLab_txtfiles(foldername, tmin=0, tmax=None, tstep=1):
         files = glob.glob(foldername + "/*.txt")
         files = sorted(files)
         nt = len(files)
-        if tmax == None:
+        if tmax is None:
             tmax = nt
         if nt == 0:
             raise Exception("Did not find any text files in that folder")

@@ -8,7 +8,6 @@ from scipy.stats import linregress
 from scipy.ndimage import zoom, gaussian_filter
 from pynamix.exposure import *
 
-
 module_loc = pynamix.__file__[:-11]
 
 
@@ -53,7 +52,7 @@ def hanning_window(patchw=32):
 
 def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
     """Generate two 1D vectors that grid an image
-    
+
     Creates a grid of patch centers for image analysis. The grid respects
     patch boundaries and optionally ROI constraints.
 
@@ -70,7 +69,7 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
 
     Returns:
         tuple: (gridx, gridy) - Two 1D numpy arrays with patch center coordinates
-        
+
     Examples:
         >>> data = np.zeros((10, 100, 80))
         >>> logfile = {"detector": {}}
@@ -78,7 +77,7 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
         >>> # gridx starts at 8 (patchw) and ends before 92 (100-8)
     """
     nt, nx, ny = data.shape
-    
+
     # Determine the effective domain considering ROI
     if "detector" in logfile and "ROI" in logfile["detector"]:
         roi = logfile["detector"]["ROI"]
@@ -93,7 +92,7 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
         x_max = nx
         y_min = 0
         y_max = ny
-    
+
     # Apply patch buffer constraints based on mode
     if mode in ["bottom-left", "bottom_left"]:
         # Start from bottom-left with patch buffer
@@ -101,43 +100,43 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
         x_end = x_max - patchw
         y_start = y_min + patchw
         y_end = y_max - patchw
-        
+
         # Validate boundaries
         if x_start < x_end and 0 <= x_start < nx and 0 < x_end <= nx:
             gridx = np.arange(x_start, x_end, xstep)
         else:
             gridx = np.array([])
-        
+
         if y_start < y_end and 0 <= y_start < ny and 0 < y_end <= ny:
             gridy = np.arange(y_start, y_end, ystep)
         else:
             gridy = np.array([])
-            
+
     elif mode in ["center", "centre", "centered", "centred"]:
         # Center the grid in the available space
         x_start = x_min + patchw
         x_end = x_max - patchw
         y_start = y_min + patchw
         y_end = y_max - patchw
-        
+
         # Calculate number of patches that fit
         if x_start < x_end and y_start < y_end:
             nx_patches = int((x_end - x_start) / xstep)
             ny_patches = int((y_end - y_start) / ystep)
-            
+
             # Calculate total space used
             x_span = nx_patches * xstep
             y_span = ny_patches * ystep
-            
+
             # Center the grid
             x_offset = (x_end - x_start - x_span) / 2
             y_offset = (y_end - y_start - y_span) / 2
-            
+
             if nx_patches > 0:
                 gridx = np.arange(nx_patches) * xstep + x_start + x_offset
             else:
                 gridx = np.array([])
-                
+
             if ny_patches > 0:
                 gridy = np.arange(ny_patches) * ystep + y_start + y_offset
             else:
@@ -145,21 +144,21 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
         else:
             gridx = np.array([])
             gridy = np.array([])
-            
+
     elif mode == "full":
         # Cover full domain without patch buffer (may go outside for edge patches)
         if 0 <= x_min < nx and 0 < x_max <= nx:
             gridx = np.arange(x_min, x_max, xstep)
         else:
             gridx = np.array([])
-            
+
         if 0 <= y_min < ny and 0 < y_max <= ny:
             gridy = np.arange(y_min, y_max, ystep)
         else:
             gridy = np.array([])
     else:
         raise ValueError(f"Unknown grid mode: {mode}. Use 'bottom-left', 'center', or 'full'")
-    
+
     return gridx, gridy
 
 
@@ -435,7 +434,7 @@ def average_size_map(
         normalisation=normalisation,
     )
 
-    if wmin == None:
+    if wmin is None:
         wmin = 2 / logfile["detector"]["resolution"]  # use Nyquist frequency - i.e. 2 pixels per particle
     min_val = np.argmin(np.abs(wavelength - wmax))  # this is large wavelength, wavelength is sorted large to small
     max_val = np.argmin(np.abs(wavelength - wmin))  # this is small wavelength, wavelength is sorted large to small

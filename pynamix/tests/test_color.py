@@ -21,12 +21,12 @@ class TestColorModule(unittest.TestCase):
         colors_at_0 = cmap(0.0)
         colors_at_half = cmap(0.5)
         colors_at_1 = cmap(1.0)
-        
+
         # Each should return RGBA values
         self.assertEqual(len(colors_at_0), 4)
         self.assertEqual(len(colors_at_half), 4)
         self.assertEqual(len(colors_at_1), 4)
-        
+
         # Values should be in [0, 1] range
         for color_val in [colors_at_0, colors_at_half, colors_at_1]:
             for component in color_val:
@@ -36,28 +36,28 @@ class TestColorModule(unittest.TestCase):
     def test_virino2d_valid_input(self):
         """Test virino2d with valid angle inputs"""
         # Create a simple grid of angles
-        angles = np.array([[0, np.pi/4], [np.pi/2, np.pi]])
+        angles = np.array([[0, np.pi / 4], [np.pi / 2, np.pi]])
         magnitude = np.ones_like(angles)
-        
+
         result = color.virino2d(angles, magnitude)
-        
+
         # Check output shape - should add RGB dimension
         self.assertEqual(result.shape, (2, 2, 3))
-        
+
         # Check all RGB values are in valid range
         self.assertTrue(np.all(result >= 0))
         self.assertTrue(np.all(result <= 1))
 
     def test_virino2d_negative_angles(self):
         """Test virino2d with negative angles (should work within -pi to pi)"""
-        angles = np.array([[-np.pi, -np.pi/2], [-np.pi/4, 0]])
+        angles = np.array([[-np.pi, -np.pi / 2], [-np.pi / 4, 0]])
         magnitude = np.ones_like(angles)
-        
+
         result = color.virino2d(angles, magnitude)
-        
+
         # Check output shape
         self.assertEqual(result.shape, (2, 2, 3))
-        
+
         # Check all RGB values are in valid range
         self.assertTrue(np.all(result >= 0))
         self.assertTrue(np.all(result <= 1))
@@ -67,26 +67,26 @@ class TestColorModule(unittest.TestCase):
         # Angles above pi
         angles_too_high = np.array([[0, np.pi * 1.5]])
         magnitude = np.ones_like(angles_too_high)
-        
+
         with self.assertRaises(AssertionError):
             color.virino2d(angles_too_high, magnitude)
-        
+
         # Angles below -pi
         angles_too_low = np.array([[0, -np.pi * 1.5]])
         magnitude = np.ones_like(angles_too_low)
-        
+
         with self.assertRaises(AssertionError):
             color.virino2d(angles_too_low, magnitude)
 
     def test_virino2d_magnitude_effect(self):
         """Test that magnitude parameter affects the output"""
-        angles = np.array([[0, np.pi/2]])
+        angles = np.array([[0, np.pi / 2]])
         magnitude_low = np.array([[0.1, 0.1]])
         magnitude_high = np.array([[1.0, 1.0]])
-        
+
         result_low = color.virino2d(angles, magnitude_low)
         result_high = color.virino2d(angles, magnitude_high)
-        
+
         # Results should be different (though current implementation may not use magnitude)
         # This test documents current behavior
         self.assertEqual(result_low.shape, result_high.shape)
@@ -95,9 +95,9 @@ class TestColorModule(unittest.TestCase):
         """Test virino2d with scalar-like inputs"""
         angles = np.array([[0]])
         magnitude = np.array([[1]])
-        
+
         result = color.virino2d(angles, magnitude)
-        
+
         self.assertEqual(result.shape, (1, 1, 3))
         self.assertTrue(np.all(result >= 0))
         self.assertTrue(np.all(result <= 1))
