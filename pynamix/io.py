@@ -70,6 +70,12 @@ def load_seq(filename, varian=False):
                             data = np.rot90(data, axes=(2, 1))
                         if logfile["detector"]["rotate"] == 3:  # portrait
                             data = np.rot90(data, axes=(2, 1))
+
+                        # check for a resolution entry, if not present, calculate it
+                        if "resolution" not in logfile["detector"]:
+                            logfile["detector"]["resolution"] = (
+                                logfile["detector"]["length"]["height"] / logfile["detector"]["image_size"]["height"]
+                            )
                     except:
                         # for line in g:
                         # if line.find('frames') != -1: nt = 0

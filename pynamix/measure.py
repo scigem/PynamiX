@@ -28,7 +28,7 @@ def main_direction(tensor):
         angle += np.pi
     elif angle > np.pi:
         angle -= np.pi
-    dzeta = np.sqrt(np.sum(tensor ** 2))  # ||T|| (after eq. 5)
+    dzeta = np.sqrt(np.sum(tensor**2))  # ||T|| (after eq. 5)
     return angle, dzeta
 
 
@@ -78,7 +78,7 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
             )
             # locations of centres of patches in y direction
             gridy = np.arange(
-                logfile["detector"]["ROI"]["bot"] + patchw,
+                logfile["detector"]["ROI"]["bottom"] + patchw,
                 ny - patchw + logfile["detector"]["ROI"]["top"],
                 ystep,
             )
@@ -128,7 +128,7 @@ def angular_binning(patchw=32, N=10000):
             r = (np.random.rand(N, 2) - 0.5) * 2 * patchw
             K[:, 0] = r[:, 0] / (np.sqrt(r[:, 0] ** 2 + r[:, 1] ** 2))
             K[:, 1] = r[:, 1] / (np.sqrt(r[:, 0] ** 2 + r[:, 1] ** 2))
-            x = np.floor(r + patchw).astype(np.int)
+            x = np.floor(r + patchw).astype(int)
             for i in range(1, N):
                 n_nbmaskQ[x[i, 1], x[i, 0]] += 1
                 n_maskQ[x[i, 1], x[i, 0], 0, 0] += K[i, 0] * K[i, 0]
@@ -646,57 +646,61 @@ def validate_velocities(u, v, threshold=2, sigma=1):
     v_filtered = np.ma.masked_where(mask, v)
     return u_filtered, v_filtered
 
-#======================= Andres ================================================
+
+# ======================= Andres ================================================
 def surface_elevation_sideview(data, scale, min_height=-1, threshold=-1):
     """
-    Detect the free surface by finding the highest point below the threshold accross the width of the data provided. Gravity should be in the direction of increasing first dimension. 
+    Detect the free surface by finding the highest point below the threshold accross the width of the data provided. Gravity should be in the direction of increasing first dimension.
 
     Args:
         data: The source data. Should be in the shape [ny,nx]
         scale: mm/px conversion.
-        min_height: line from which to compute elevation. There should only be material above that line. 
-        threshold: if value < threshold, we are inside the material. 
+        min_height: line from which to compute elevation. There should only be material above that line.
+        threshold: if value < threshold, we are inside the material.
     Returns:
         Array of height vs. horizontal location.
     """
-    res = np.zeros((2,data.shape[1])) ;
-    res[0,:] = [i*scale for i in range(0,data.shape[1])] ; 
-    if min_height==-1: 
-        min_height = data.shape[0] 
-    for i in range(0,data.shape[1]):
+    res = np.zeros((2, data.shape[1]))
+    res[0, :] = [i * scale for i in range(0, data.shape[1])]
+    if min_height == -1:
+        min_height = data.shape[0]
+    for i in range(0, data.shape[1]):
         for j in range(min_height, -1, -1):
-            if data[j][i]>threshold :
-                res[1,i]= (min_height-j) * scale; 
-                break ; 
-    return res ; 
+            if data[j][i] > threshold:
+                res[1, i] = (min_height - j) * scale
+                break
+    return res
 
-def surface_absorption_calibration (free_surface_profile, top_absorption):
+
+def surface_absorption_calibration(free_surface_profile, top_absorption):
     """
-    Fit the absorption for a set of thicknesses and absorption values. 
-    
+    Fit the absorption for a set of thicknesses and absorption values.
+
     Args:
         free_surface_profile: thickness of the absorbing layer
         top_absorption: corresponding transmitted xray intensity (not logged)
     """
-    res=linregress(free_surface_profile, np.log(top_absorption)) ; 
-    return {'mu':res.slope, 'beta': res.intercept} ;
+    res = linregress(free_surface_profile, np.log(top_absorption))
+    return {"mu": res.slope, "beta": res.intercept}
 
-def surface_elevation (data, absorption, sigma=0):
+
+def surface_elevation(data, absorption, sigma=0):
     """
-    Returns the elevation calculated from the xray provided and the fitted absorption coefficients. 
-    
+    Returns the elevation calculated from the xray provided and the fitted absorption coefficients.
+
     Args:
         data: the xray radiograph
         absorption: dictionary of absorption values as returned by `surface_absorption_calibration`
         sigma: size of the gaussian filter to post-apply
     """
-    ele = (1/absorption['mu'])*data- (absorption['beta']/absorption['mu']);
-    if sigma!=0:
-        ele=gaussian_filter(ele,6)
+    ele = (1 / absorption["mu"]) * data - (absorption["beta"] / absorption["mu"])
+    if sigma != 0:
+        ele = gaussian_filter(ele, 6)
     return ele
-    
+
+
 # Testing area
-if __name__ == "__main__":    
+if __name__ == "__main__":
     # Try with fake data - WORKS
     logfile = {}
     logfile["detector"] = {}
