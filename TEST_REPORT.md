@@ -41,27 +41,25 @@ A comprehensive test suite has been implemented for the PynamiX codebase, which 
    - **Fix**: Changed to integer division `//`
    - **Lines**: 252-256
 
-### Critical Bugs Documented (Not Yet Fixed)
+### Critical Bugs Fixed (Updated)
 
-4. **exposure.py - Undefined Variable in normalise_rotation()** 🔍 DOCUMENTED
-   - **Issue**: Function uses undefined variable `frame` instead of `i`
-   - **Impact**: normalise_rotation() crashes when called
-   - **Location**: Line 186
-   - **Test**: test_exposure.TestNormaliseRotation.test_normalise_rotation_basic
-   - **Evidence**: NameError: name 'frame' is not defined
+4. **exposure.py - Undefined Variable in normalise_rotation()** ✅ FIXED
+   - **Issue**: Function used undefined variable `frame` instead of `i`
+   - **Impact**: normalise_rotation() crashed when called
+   - **Location**: Lines 186, 190
+   - **Fix**: Changed `frame` to `i` in both locations
 
-5. **exposure.py - set_motion_limits() Edge Case** 🔍 DOCUMENTED
-   - **Issue**: Function crashes when no motion is detected (empty array)
-   - **Impact**: Crashes on static images or with inappropriate threshold
-   - **Location**: Line 117-118
-   - **Test**: test_exposure.TestExposureModule.test_set_motion_limits_custom_threshold
-   - **Fix Needed**: Check if array is empty before indexing
+5. **exposure.py - set_motion_limits() Edge Case** ✅ FIXED
+   - **Issue**: Function crashed when no motion was detected (empty array)
+   - **Impact**: Crashed on static images or with inappropriate threshold
+   - **Location**: Lines 117-124
+   - **Fix**: Added check for empty array and handle gracefully
 
-6. **measure.py - grid() ROI Boundary Issue** 🔍 DOCUMENTED
-   - **Issue**: Returns empty grid arrays with certain ROI configurations
-   - **Impact**: No patches generated for analysis in some edge cases
-   - **Location**: grid() function
-   - **Test**: test_measure.TestGrid.test_grid_with_ROI
+6. **measure.py - grid() ROI Boundary Issue** ✅ FIXED
+   - **Issue**: Incorrect calculation of grid boundaries with ROI
+   - **Impact**: Wrong grid generation with ROI configurations
+   - **Location**: Lines 70-88
+   - **Fix**: Corrected ROI boundary calculations and added validation
 
 ## Test Categories
 
