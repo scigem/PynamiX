@@ -128,6 +128,9 @@ def load_image(filename, as_gray=True):
     """
     im = plt.imread(filename)  # load an image
     if as_gray:  # convert to grayscale
+        # Handle RGBA images by removing alpha channel
+        if im.ndim == 3 and im.shape[2] == 4:
+            im = im[:, :, :3]  # Keep only RGB channels, discard alpha
         im = rgb2gray(im)
     logfile = {"detector": {}, "geometry": {}, "X-rays": {}}
     ims = np.expand_dims(im, 0)  # make into a 3D array to conform with pynamix convention
