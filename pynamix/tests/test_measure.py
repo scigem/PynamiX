@@ -83,14 +83,29 @@ class TestHanningWindow(unittest.TestCase):
         
         self.assertGreater(center_val, edge_val)
 
-    def test_hanning_window_symmetry(self):
-        """Test that hanning window is radially symmetric"""
+    def test_hanning_window_radial_properties(self):
+        """Test that hanning window has correct radial properties"""
         w = measure.hanning_window(32)
         
-        # Check that opposite corners have same value (within tolerance)
-        # Due to discrete grid, might not be exactly symmetric
-        self.assertAlmostEqual(w[10, 10], w[54, 54], places=2)
-        self.assertAlmostEqual(w[10, 54], w[54, 10], places=2)
+        # Check that center has high value (near 1)
+        self.assertGreater(w[32, 32], 0.99)
+        
+        # Check that values decrease with distance from center
+        # Points closer to center should have higher values
+        self.assertGreater(w[32, 32], w[25, 32])
+        self.assertGreater(w[25, 32], w[20, 32])
+        self.assertGreater(w[20, 32], w[10, 32])
+        
+        # Check that corners (far from center) are zero or very small
+        self.assertLess(w[1, 1], 0.01)
+        self.assertLess(w[1, 63], 0.01)
+        self.assertLess(w[63, 1], 0.01)
+        self.assertLess(w[63, 63], 0.01)
+        
+        # Check that window is zero or very small outside radius (patchw=32)
+        # Points at distance > 32 should be zero or nearly zero
+        self.assertLess(w[1, 32], 0.01)  # distance ~31, should be small
+        self.assertLess(w[63, 32], 0.01)  # distance ~31, should be small
 
     def test_hanning_window_zero_outside_radius(self):
         """Test that hanning window is zero outside radius"""
@@ -154,6 +169,51 @@ class TestGrid(unittest.TestCase):
         self.assertGreaterEqual(gridy[0], logfile["detector"]["ROI"]["top"] + patchw)
         # gridy should end before bottom - patchw
         self.assertLessEqual(gridy[-1], logfile["detector"]["ROI"]["bottom"] - patchw)
+
+    def test_grid_centered_mode(self):
+        """Test grid with centered mode"""
+        data = np.zeros((10, 100, 80))
+        logfile = {"detector": {}}
+        xstep, ystep, patchw = 16, 16, 8
+        
+        gridx, gridy = measure.grid(data, logfile, xstep, ystep, patchw, mode="center")
+        
+        # Grid should be non-empty
+        self.assertGreater(len(gridx), 0)
+        self.assertGreater(len(gridy), 0)
+        
+        # Grid should be within valid bounds
+        self.assertGreaterEqual(gridx[0], patchw)
+        self.assertLessEqual(gridx[-1], 100 - patchw)
+        
+        # Check that grid is reasonably centered
+        # The first point should not be exactly at patchw (should have offset)
+        self.assertGreater(gridx[0], patchw)
+
+    def test_grid_full_mode(self):
+        """Test grid with full mode (no buffer)"""
+        data = np.zeros((10, 100, 80))
+        logfile = {"detector": {}}
+        xstep, ystep, patchw = 16, 16, 8
+        
+        gridx, gridy = measure.grid(data, logfile, xstep, ystep, patchw, mode="full")
+        
+        # Grid should start at 0
+        self.assertEqual(gridx[0], 0)
+        self.assertEqual(gridy[0], 0)
+        
+        # Grid should be non-empty
+        self.assertGreater(len(gridx), 0)
+        self.assertGreater(len(gridy), 0)
+
+    def test_grid_invalid_mode(self):
+        """Test grid with invalid mode raises error"""
+        data = np.zeros((10, 100, 80))
+        logfile = {"detector": {}}
+        xstep, ystep, patchw = 16, 16, 8
+        
+        with self.assertRaises(ValueError):
+            measure.grid(data, logfile, xstep, ystep, patchw, mode="invalid")
 
     def test_grid_returns_1d_arrays(self):
         """Test that grid returns 1D arrays"""

@@ -195,8 +195,11 @@ class TestExposureModule(unittest.TestCase):
         angles = logfile_updated["detector"]["frames"][:, 2]
         
         # Should go from 0 to 720 (two rotations)
+        # With endpoint=False, angles will be evenly spaced: 0, 7.2, 14.4, ..., 712.8
         self.assertAlmostEqual(angles[0], 0.0, places=5)
-        self.assertAlmostEqual(angles[-1], 0.0, places=5)  # 720 % 360 = 0
+        # Last angle will be 720 * 99/100 = 712.8, which after % 360 = 352.8
+        # Since we use endpoint=False, the last angle is not quite 720
+        self.assertGreater(angles[-1], 350)  # Should be around 352.8
 
 
 class TestNormaliseRotation(unittest.TestCase):

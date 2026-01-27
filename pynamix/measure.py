@@ -53,52 +53,113 @@ def hanning_window(patchw=32):
 
 def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
     """Generate two 1D vectors that grid an image
+    
+    Creates a grid of patch centers for image analysis. The grid respects
+    patch boundaries and optionally ROI constraints.
 
     Args:
         data: The source data. Should be in the shape [nt,nx,ny]
-        logfile: The logfile.
-        xstep (int): The half width of the patch.
-        ystep (int): The half width of the patch.
-        patchw (int): The half width of the patch.
-        mode (str): bottom-left or centre. Either bottom/left aligned or centred in the image.
-
-    .. warning:: centred mode not implemented yet
+        logfile: The logfile containing detector information and optional ROI
+        xstep (int): The spacing between patches in x direction
+        ystep (int): The spacing between patches in y direction
+        patchw (int): The half width of the patch
+        mode (str): Grid alignment mode:
+            - "bottom-left": Align grid to bottom-left corner with patchw buffer
+            - "center" or "centre": Center the grid in the available space
+            - "full": Cover full domain (no patch buffer, may go outside boundaries)
 
     Returns:
-        The radial hanning window.
+        tuple: (gridx, gridy) - Two 1D numpy arrays with patch center coordinates
+        
+    Examples:
+        >>> data = np.zeros((10, 100, 80))
+        >>> logfile = {"detector": {}}
+        >>> gridx, gridy = grid(data, logfile, 16, 16, 8)
+        >>> # gridx starts at 8 (patchw) and ends before 92 (100-8)
     """
     nt, nx, ny = data.shape
-
-    if mode == "bottom-left":
-        if "ROI" in logfile["detector"]:
-            # Calculate grid boundaries considering ROI
-            # ROI left/right define x boundaries, top/bottom define y boundaries
-            left_bound = logfile["detector"]["ROI"]["left"] + patchw
-            right_bound = logfile["detector"]["ROI"]["right"] - patchw
-            top_bound = logfile["detector"]["ROI"]["top"] + patchw
-            bottom_bound = logfile["detector"]["ROI"]["bottom"] - patchw
+    
+    # Determine the effective domain considering ROI
+    if "detector" in logfile and "ROI" in logfile["detector"]:
+        roi = logfile["detector"]["ROI"]
+        # ROI defines the region of interest in the full image
+        x_min = roi["left"]
+        x_max = roi["right"]
+        y_min = roi["top"]
+        y_max = roi["bottom"]
+    else:
+        # No ROI defined, use full domain
+        x_min = 0
+        x_max = nx
+        y_min = 0
+        y_max = ny
+    
+    # Apply patch buffer constraints based on mode
+    if mode in ["bottom-left", "bottom_left"]:
+        # Start from bottom-left with patch buffer
+        x_start = x_min + patchw
+        x_end = x_max - patchw
+        y_start = y_min + patchw
+        y_end = y_max - patchw
+        
+        # Validate boundaries
+        if x_start < x_end and 0 <= x_start < nx and 0 < x_end <= nx:
+            gridx = np.arange(x_start, x_end, xstep)
+        else:
+            gridx = np.array([])
+        
+        if y_start < y_end and 0 <= y_start < ny and 0 < y_end <= ny:
+            gridy = np.arange(y_start, y_end, ystep)
+        else:
+            gridy = np.array([])
             
-            # Ensure boundaries are within valid range and don't create empty arrays
-            if left_bound < right_bound and 0 <= left_bound < nx and 0 < right_bound <= nx:
-                gridx = np.arange(left_bound, min(right_bound, nx), xstep)
+    elif mode in ["center", "centre", "centered", "centred"]:
+        # Center the grid in the available space
+        x_start = x_min + patchw
+        x_end = x_max - patchw
+        y_start = y_min + patchw
+        y_end = y_max - patchw
+        
+        # Calculate number of patches that fit
+        if x_start < x_end and y_start < y_end:
+            nx_patches = int((x_end - x_start) / xstep)
+            ny_patches = int((y_end - y_start) / ystep)
+            
+            # Calculate total space used
+            x_span = nx_patches * xstep
+            y_span = ny_patches * ystep
+            
+            # Center the grid
+            x_offset = (x_end - x_start - x_span) / 2
+            y_offset = (y_end - y_start - y_span) / 2
+            
+            if nx_patches > 0:
+                gridx = np.arange(nx_patches + 1) * xstep + x_start + x_offset
             else:
                 gridx = np.array([])
-            
-            if top_bound < bottom_bound and 0 <= top_bound < ny and 0 < bottom_bound <= ny:
-                gridy = np.arange(top_bound, min(bottom_bound, ny), ystep)
+                
+            if ny_patches > 0:
+                gridy = np.arange(ny_patches + 1) * ystep + y_start + y_offset
             else:
                 gridy = np.array([])
         else:
-            gridx = np.arange(patchw, nx - patchw, xstep)
-            gridy = np.arange(patchw, ny - patchw, ystep)
-    # else:
-    # locations of centres of patches in x direction
-    # gridx = np.arange(0, nx, xstep)
-    # locations of centres of patches in y direction
-    # gridy = np.arange(0, ny, ystep)
-
+            gridx = np.array([])
+            gridy = np.array([])
+            
+    elif mode == "full":
+        # Cover full domain without patch buffer (may go outside for edge patches)
+        if 0 <= x_min < nx and 0 < x_max <= nx:
+            gridx = np.arange(x_min, x_max, xstep)
+        else:
+            gridx = np.array([])
+            
+        if 0 <= y_min < ny and 0 < y_max <= ny:
+            gridy = np.arange(y_min, y_max, ystep)
+        else:
+            gridy = np.array([])
     else:
-        sys.exit("Sorry, haven't implemeneted centred grid yet")
+        raise ValueError(f"Unknown grid mode: {mode}. Use 'bottom-left', 'center', or 'full'")
+    
     return gridx, gridy
 
 

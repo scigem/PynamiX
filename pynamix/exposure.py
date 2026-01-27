@@ -152,9 +152,17 @@ def set_angles_from_limits(logfile, max_angle=360):
 
     num_frames = len(logfile["detector"]["frames"])
     angles = np.nan * np.ones(num_frames)
-    angles[logfile["start_frame"] : logfile["end_frame"]] = (
-        np.linspace(0, max_angle, logfile["end_frame"] - logfile["start_frame"]) % 360
-    )
+    
+    # Calculate number of frames in motion range
+    num_moving_frames = logfile["end_frame"] - logfile["start_frame"]
+    
+    if num_moving_frames > 0:
+        # Use linspace with endpoint=False to get evenly spaced angles
+        # This ensures that if we have 80 frames from 0-360, each frame is exactly 4.5 degrees
+        angles[logfile["start_frame"] : logfile["end_frame"]] = (
+            np.linspace(0, max_angle, num_moving_frames, endpoint=False) % 360
+        )
+    
     logfile["detector"]["frames"][:, 2] = angles
 
     return logfile
