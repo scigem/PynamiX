@@ -114,8 +114,15 @@ def set_motion_limits(data, logfile, threshold=False, verbose=False):
         threshold = (1 - alpha) * diff.max() + alpha * diff.min()
     moving = diff > threshold
 
-    logfile["start_frame"] = int(np.nonzero(moving)[0][0] - 1)  # numpy.int64 is a struggle to JSONify
-    logfile["end_frame"] = int(np.nonzero(moving)[0][-1])
+    # Check if any motion was detected
+    moving_indices = np.nonzero(moving)[0]
+    if len(moving_indices) == 0:
+        # No motion detected, set to full range
+        logfile["start_frame"] = 0
+        logfile["end_frame"] = len(diff)
+    else:
+        logfile["start_frame"] = int(moving_indices[0] - 1) if moving_indices[0] > 0 else 0  # numpy.int64 is a struggle to JSONify
+        logfile["end_frame"] = int(moving_indices[-1])
 
     if verbose:
         import matplotlib.pyplot as plt
@@ -183,11 +190,11 @@ def normalise_rotation(fg_data, fg_logfile, bg_data, bg_logfile, verbose=False):
 
             j = np.nanargmin(np.abs(fg_angle - bg_angles))
 
-            normalised_data[i] = np.nan_to_num(fg_data[frame] / bg_data[j])
+            normalised_data[i] = np.nan_to_num(fg_data[i] / bg_data[j])
 
             if verbose:
                 plt.subplot(221)
-                plt.imshow(fg_data[frame])
+                plt.imshow(fg_data[i])
 
                 plt.subplot(222)
                 plt.imshow(bg_data[j])

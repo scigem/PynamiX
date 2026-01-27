@@ -140,9 +140,16 @@ class TestGrid(unittest.TestCase):
         
         gridx, gridy = measure.grid(data, logfile, xstep, ystep, patchw)
         
-        # Grid should respect ROI boundaries
+        # Grid should respect ROI boundaries (within the ROI region)
+        # gridx should start from left + patchw
         self.assertGreaterEqual(gridx[0], logfile["detector"]["ROI"]["left"] + patchw)
-        self.assertGreaterEqual(gridy[0], logfile["detector"]["ROI"]["bottom"] + patchw)
+        # gridx should end before right - patchw
+        self.assertLessEqual(gridx[-1], logfile["detector"]["ROI"]["right"] - patchw)
+        
+        # gridy should start from top + patchw
+        self.assertGreaterEqual(gridy[0], logfile["detector"]["ROI"]["top"] + patchw)
+        # gridy should end before bottom - patchw
+        self.assertLessEqual(gridy[-1], logfile["detector"]["ROI"]["bottom"] - patchw)
 
     def test_grid_returns_1d_arrays(self):
         """Test that grid returns 1D arrays"""

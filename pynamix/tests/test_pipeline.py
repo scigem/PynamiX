@@ -201,9 +201,9 @@ class TestEndToEndPipeline(unittest.TestCase):
 class TestHardcodedIssues(unittest.TestCase):
     """Tests designed to expose hardcoded issues in the codebase"""
 
-    def test_normalise_rotation_undefined_frame_variable(self):
-        """Test that normalise_rotation has undefined 'frame' variable"""
-        # This test documents a known bug in normalise_rotation
+    def test_normalise_rotation_works_correctly(self):
+        """Test that normalise_rotation works correctly after bug fix"""
+        # This test verifies the bug fix for undefined 'frame' variable
         nt, nx, ny = 5, 20, 20
         bg_data = np.ones((nt, nx, ny)) * 100
         fg_data = np.ones((nt, nx, ny)) * 200
@@ -228,11 +228,12 @@ class TestHardcodedIssues(unittest.TestCase):
             }
         }
         
-        # This should fail with NameError: name 'frame' is not defined
-        with self.assertRaises(NameError) as context:
-            exposure.normalise_rotation(fg_data, fg_logfile, bg_data, bg_logfile)
+        # Should now work without NameError
+        result = exposure.normalise_rotation(fg_data, fg_logfile, bg_data, bg_logfile)
         
-        self.assertIn("frame", str(context.exception))
+        # Result should be fg/bg = 200/100 = 2 (with nan_to_num)
+        self.assertEqual(result.shape, fg_data.shape)
+        self.assertTrue(np.all(np.isfinite(result)))
 
     def test_pendulum_missing_data_path(self):
         """Test that pendulum() handles missing data file"""

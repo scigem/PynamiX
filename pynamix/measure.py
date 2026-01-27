@@ -71,17 +71,23 @@ def grid(data, logfile, xstep, ystep, patchw, mode="bottom-left"):
 
     if mode == "bottom-left":
         if "ROI" in logfile["detector"]:
-            gridx = np.arange(
-                logfile["detector"]["ROI"]["left"] + patchw,
-                nx - patchw + logfile["detector"]["ROI"]["right"],
-                xstep,
-            )
-            # locations of centres of patches in y direction
-            gridy = np.arange(
-                logfile["detector"]["ROI"]["bottom"] + patchw,
-                ny - patchw + logfile["detector"]["ROI"]["top"],
-                ystep,
-            )
+            # Calculate grid boundaries considering ROI
+            # ROI left/right define x boundaries, top/bottom define y boundaries
+            left_bound = logfile["detector"]["ROI"]["left"] + patchw
+            right_bound = logfile["detector"]["ROI"]["right"] - patchw
+            top_bound = logfile["detector"]["ROI"]["top"] + patchw
+            bottom_bound = logfile["detector"]["ROI"]["bottom"] - patchw
+            
+            # Ensure boundaries are within valid range and don't create empty arrays
+            if left_bound < right_bound and left_bound < nx:
+                gridx = np.arange(left_bound, min(right_bound, nx), xstep)
+            else:
+                gridx = np.array([])
+            
+            if top_bound < bottom_bound and top_bound < ny:
+                gridy = np.arange(top_bound, min(bottom_bound, ny), ystep)
+            else:
+                gridy = np.array([])
         else:
             gridx = np.arange(patchw, nx - patchw, xstep)
             gridy = np.arange(patchw, ny - patchw, ystep)
