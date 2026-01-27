@@ -293,7 +293,7 @@ def save_as_tiffs(
         os.makedirs(foldername)
 
     for t in progressbar(range(tmin, tmax, tstep)):
-        im = data[t].astype(np.float)
+        im = data[t].astype(float)
         im = normalisation(im)
         if angle != 0:
             im = np.rotate(im, angle=angle, mode="edge")
