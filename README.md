@@ -39,6 +39,25 @@ The hooks will run:
 - **flake8** - linting (on commit)  
 - **tests** - test suite (on push)
 
+## Releasing to PyPI (via GitHub tags)
+
+This repo is configured to publish to PyPI from GitHub Actions when you push a version tag like `v0.34`.
+
+Release steps:
+
+1. Update the version in `pyproject.toml`.
+2. Commit the change to `main`.
+3. Create and push a tag:
+
+```bash
+git tag v0.34
+git push origin v0.34
+```
+
+Notes:
+- Publishing uses PyPI Trusted Publishing (OIDC), which works with PyPI 2FA.
+- PyPI will reject uploads if the version already exists, so the version must be bumped.
+
 ## Examples
 Try out the included Jupyter notebook to see how to use the package.
 
@@ -67,10 +86,4 @@ A sorted implementation list is as follows:
     2. Option to choose between FFT and wavelet transform for size measurement
     3. Wrapper for James's PIV code
     4. Wrapper for James's fake radiograph generator
-
-## Deploying to PyPI (just a reminder for Benjy, please don't try this yourself)
-Run the following to make a new distribution and upload it to PyPI. **Note**: You first need to update the version number in `pyproject.toml`.
-```
-python3 setup.py sdist
-twine upload dist/*
 ```
