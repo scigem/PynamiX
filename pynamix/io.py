@@ -80,12 +80,12 @@ def load_seq(filename, varian=False):
                         if "resolution" not in logfile["detector"]:
                             if "physical_size" in logfile["detector"] and "image_size" in logfile["detector"]:
                                 logfile["detector"]["resolution"] = (
-                                    logfile["detector"]["physical_size"]["height"]
-                                    / logfile["detector"]["image_size"]["height"]
+                                    logfile["detector"]["image_size"]["height"]
+                                    / logfile["detector"]["physical_size"]["height"]
                                 )
                             else:
                                 print(
-                                    "WARNING: No resolution information found in log file, and not enough information to calculate it. Assuming 1 for now, but this may cause problems with some functions. Resolution is defined as the physical size of each pixel, so if you know the physical size of your detector and the number of pixels, you can calculate it as (physical height of detector in mm) / (number of pixels in height)."
+                                    "WARNING: No resolution information found in log file, and not enough information to calculate it. Assuming 1 for now, but this may cause problems with some functions. Resolution is defined as the number of pixels per mm."
                                 )
                                 logfile["detector"]["resolution"] = 1
                     except:
