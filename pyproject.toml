@@ -25,23 +25,23 @@ dependencies = [
     "imageio",
     "scipy",
     "scikit-image",
-    "ipykernel",
-    "ipywidgets",
-    "sphinx",
-    "nbsphinx",
-    "pandoc",
-    "pre-commit",
     "astropy",
-    "progressbar2"
+    "progressbar2",
+    "pandas",
+    "requests",
 ]
 
 [project.optional-dependencies]
+# ipywidgets/IPython are needed only by pynamix.plotting's interactive GUIs
+interactive = ["ipywidgets", "ipython", "ipykernel"]
+docs = ["sphinx", "nbsphinx", "pandoc"]
 dev = [
     "black",
     "black[jupyter]",
     "flake8",
     "pytest",
-    "pytest-cov"
+    "pytest-cov",
+    "pre-commit",
 ]
 
 [project.urls]

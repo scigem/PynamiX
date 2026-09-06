@@ -7,6 +7,13 @@ matplotlib.use("Agg")  # Use non-interactive backend for testing
 import matplotlib.pyplot as plt
 from pynamix import plotting
 
+try:  # the interactive GUIs need an optional extra: pynamix[interactive]
+    import ipywidgets  # noqa: F401
+
+    HAVE_IPYWIDGETS = True
+except ImportError:
+    HAVE_IPYWIDGETS = False
+
 
 class TestPlottingModule(unittest.TestCase):
     """Test cases for the plotting module"""
@@ -50,6 +57,7 @@ class TestPlottingModule(unittest.TestCase):
 
         plt.close("all")
 
+    @unittest.skipUnless(HAVE_IPYWIDGETS, "requires the interactive extra")
     def test_hist_GUI_3d_data(self):
         """Test hist_GUI with 3D data"""
         data = np.random.randint(0, 65535, size=(10, 20, 20))
@@ -62,6 +70,7 @@ class TestPlottingModule(unittest.TestCase):
         except Exception as e:
             self.fail(f"hist_GUI() raised {e} unexpectedly")
 
+    @unittest.skipUnless(HAVE_IPYWIDGETS, "requires the interactive extra")
     def test_hist_GUI_2d_data(self):
         """Test hist_GUI with 2D data"""
         data = np.random.randint(0, 65535, size=(20, 20))

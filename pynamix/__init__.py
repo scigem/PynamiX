@@ -6,4 +6,10 @@ from .measure import *
 from .plotting import *
 from .tests import *
 
-__all__ = ["color", "data", "exposure", "io", "measure", "plotting", "tests"]
+# Exposed as a submodule only, deliberately: pynamix.spectral uses different
+# conventions from pynamix.measure (full ROI widths not half widths, annular
+# means not sums, unnormalised patches not standardised ones), so its names
+# should not land in the same flat namespace. See pynamix.spectral.compat.
+from . import spectral
+
+__all__ = ["color", "data", "exposure", "io", "measure", "plotting", "spectral", "tests"]
