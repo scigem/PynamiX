@@ -149,18 +149,25 @@ def welch_cross_spectrum(X1: np.ndarray, X2: np.ndarray, p: float, roi: int = 25
     )
 
 
-def max_unambiguous_shift(p: float, q_max: float) -> float:
-    """Largest ``|u|`` for which ``q.u < pi`` everywhere in the fit band."""
+def max_unambiguous_shift(q_max: float) -> float:
+    """Largest ``|u|`` for which ``q.u < pi`` everywhere in the fit band.
+
+    The limit is set by the top of the fitted band alone; the pixel pitch enters
+    only through which ``q_max`` is reachable in the first place.
+    """
     return float(np.pi / q_max)
 
 
-def phase_correlation_shift(X1: np.ndarray, X2: np.ndarray, p: float,
-                            upsample: int = 1) -> np.ndarray:
+def phase_correlation_shift(X1: np.ndarray, X2: np.ndarray, p: float) -> np.ndarray:
     """Coarse displacement from the phase-correlation peak, in length units.
 
-    Returns ``u = (ux, uy)`` such that ``X2(x) ~ X1(x - u)``.  Sub-pixel position
-    is refined by a parabola through the peak and its two neighbours in each
-    direction, which is enough to initialise the phase fit.
+    Returns ``u = (ux, uy)`` such that ``X2(x) ~ X1(x - u)``, where ``ux`` is
+    along **axis 1** of the array (columns) and ``uy`` along axis 0 (rows).
+    Every displacement in this module uses that order, so an image whose first
+    array axis is the physical ``x`` will report its motion in ``uy``.
+
+    Sub-pixel position is refined by a parabola through the peak and its two
+    neighbours in each direction, which is enough to initialise the phase fit.
     """
     cs = cross_spectrum(X1, X2, p)
     R = cs.C / np.maximum(np.abs(cs.C), 1e-30)

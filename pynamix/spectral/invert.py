@@ -28,7 +28,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from dataclasses import dataclass as _dataclass
 
 from .psd import RadialPsd
 from .units import form_factor, sphere_volume
@@ -541,22 +540,18 @@ def profile_d32(
     r"""Profile the Gamma log-likelihood over the Sauter mean diameter.
 
     The two shape parameters of the Schulz distribution are only weakly
-    determined by the high-\ ``q`` self term, but the combination
-    :math:`d_{32}=d_{
-m mean}(1+2\,{
-m cv}^2)` -- the surface-weighted mean,
+    determined by the high-``q`` self term, but the combination
+    :math:`d_{32}=d_{\rm mean}(1+2\,{\rm cv}^2)` -- the surface-weighted mean,
     which is the diameter that permeability, drag and interfacial-area
     arguments actually want -- is far better constrained.  Reparameterising in
-    :math:`(d_{32},{
-m cv})` and profiling out ``cv`` and the amplitude gives
+    :math:`(d_{32},{\rm cv})` and profiling out ``cv`` and the amplitude gives
     an interval for it directly, without ever having to trust the individual
     shape parameters.
 
     The statistics are the ones stated for every other estimator in this work:
     a radially averaged bin is Gamma distributed with shape ``n_j``, so
 
-    .. math:: \ell=-\sum_j n_j\left[S_j/\mu_j+\ln\mu_j
-ight],
+    .. math:: \ell=-\sum_j n_j\left[S_j/\mu_j+\ln\mu_j\right],
 
     which is *not* a sum of squares.
     """
