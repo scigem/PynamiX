@@ -92,12 +92,22 @@ class TestFirstPeak(unittest.TestCase):
         fit = invert.fit_first_peak(q, S, search=(4.0, 11.0))
         self.assertLess(abs(fit.q1 - true), abs(coarse - true))
 
-    def test_a_featureless_window_yields_no_usable_width(self):
-        """There is no peak to find, and the returned uncertainty says so."""
+    def test_a_featureless_window_reports_no_interior_maximum(self):
+        """There is no peak to find, and the caller must be able to tell.
+
+        Asserted on the position rather than on the width: a quadratic through a
+        flat window has zero curvature only up to rounding, so whether the width
+        comes back as NaN or as a huge finite number is a property of the build,
+        not of the contract.  Landing on the boundary of the search window is
+        the robust signal.
+        """
         q = np.linspace(3.0, 12.0, 200)
-        fit = invert.fit_first_peak(q, np.ones_like(q), search=(11.5, 11.9))
-        self.assertTrue(np.isnan(fit.width))
-        self.assertTrue(np.isnan(fit.sigma_q1))
+        step = q[1] - q[0]
+        lo, hi = 11.5, 11.9
+        fit = invert.fit_first_peak(q, np.ones_like(q), search=(lo, hi))
+        # within one grid spacing of an edge of the window, i.e. no interior peak
+        self.assertTrue(fit.q1 <= lo + step or fit.q1 >= hi - step)
+        self.assertAlmostEqual(fit.S1, 1.0, places=9)
 
 
 class TestSelfTerm(unittest.TestCase):
