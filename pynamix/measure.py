@@ -14,13 +14,21 @@ module_loc = pynamix.__file__[:-11]
 def main_direction(tensor):
     """Calculate the principal orientation and orientation magnitude of a nematic order tensor.
 
+    A nematic order tensor is symmetric by construction, so its eigenvalues are
+    real.  ``numpy.linalg.eigh`` is used rather than ``numpy.linalg.eig``: the
+    general routine returns complex results for matrices it cannot certify as
+    symmetric, which then propagates into ``arctan2`` and raises.  The input is
+    symmetrised first so that the function is total for any 2 by 2 array.
+
     Args:
         tensor: 2 by 2 array representing the nematic order tensor.
 
     Returns:
         Two values, one for the principal orientation in radians (from zero to pi) and one for the magnitude of the orientation on a scale of zero to one.
     """
-    v, V = np.linalg.eig(tensor)  # eigenvalues (v) and eigenvectors (V)
+    tensor = np.asarray(tensor, dtype=float)
+    tensor = 0.5 * (tensor + tensor.T)  # nematic tensors are symmetric
+    v, V = np.linalg.eigh(tensor)  # eigenvalues (v) and eigenvectors (V), both real
     idx = np.argmax(v)  # principal eigenvalue
     angle = np.arctan2(V[1, idx], V[0, idx])
     if angle < 0:

@@ -1,8 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from ipywidgets import interactive, fixed
-import ipywidgets as widgets
-from IPython.display import display
 
 import matplotlib as mpl
 
@@ -44,6 +41,14 @@ def hist_GUI(data, vmin=0, vmax=65535):
     Returns:
         masked_data (masked ND array): The same data as the original, but with masked values outside of the defined range.
     """
+    try:
+        from ipywidgets import interactive, fixed
+        import ipywidgets as widgets
+    except ImportError as e:  # pragma: no cover - depends on the install
+        raise ImportError(
+            "hist_GUI needs the interactive extra: pip install pynamix[interactive]"
+        ) from e
+
     # frame = 0
     if len(data.shape) == 2:
         nt = 0
