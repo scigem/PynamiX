@@ -119,5 +119,4 @@ def assert_unnormalised(patch, tol=0.05):
             "the estimator instead of through this check." % (mean, std)
         )
     if std == 0.0:
-        warnings.warn("patch has zero variance; the spectrum will be identically zero",
-                      RuntimeWarning, stacklevel=2)
+        warnings.warn("patch has zero variance; the spectrum will be identically zero", RuntimeWarning, stacklevel=2)

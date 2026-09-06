@@ -88,8 +88,7 @@ def bootstrap_first_peak(
     for b in range(n_boot):
         Sb = rng.gamma(shape=nn, scale=np.asarray(S) / nn)
         try:
-            draws[b] = fit_first_peak(q, Sb, search=search,
-                                      window_frac=window_frac).q1
+            draws[b] = fit_first_peak(q, Sb, search=search, window_frac=window_frac).q1
         except Exception:
             draws[b] = np.nan
     good = np.isfinite(draws)
@@ -97,7 +96,9 @@ def bootstrap_first_peak(
 
 
 def crb_first_peak(
-    q: np.ndarray, S: np.ndarray, n: np.ndarray,
+    q: np.ndarray,
+    S: np.ndarray,
+    n: np.ndarray,
     band: tuple[float, float] = (5.0, 9.0),
 ) -> float:
     r"""Cramer-Rao lower bound on the first-peak position.
@@ -120,9 +121,7 @@ def crb_first_peak(
     return float(1.0 / np.sqrt(info)) if info > 0 else np.nan
 
 
-def crb_displacement(
-    qx: np.ndarray, qy: np.ndarray, coherence: np.ndarray, n_avg: np.ndarray | float = 1.0
-) -> float:
+def crb_displacement(qx: np.ndarray, qy: np.ndarray, coherence: np.ndarray, n_avg: np.ndarray | float = 1.0) -> float:
     r"""Cramer-Rao lower bound on a displacement measured from cross-spectrum phase.
 
     For a coherent signal of magnitude-squared coherence :math:`\gamma^2` averaged
@@ -160,10 +159,10 @@ class Contribution:
     """One row of an uncertainty budget."""
 
     name: str
-    value: float          # x_i
-    u: float              # u(x_i)
-    sensitivity: float    # dy/dx_i
-    kind: str = "B"       # "A" or "B"
+    value: float  # x_i
+    u: float  # u(x_i)
+    sensitivity: float  # dy/dx_i
+    kind: str = "B"  # "A" or "B"
     note: str = ""
 
     @property
@@ -200,7 +199,7 @@ class Budget:
         c = self.contributions
         var = sum(x.contribution**2 for x in c)
         for i, xi in enumerate(c):
-            for xj in c[i + 1:]:
+            for xj in c[i + 1 :]:
                 r = self._rho(xi.name, xj.name)
                 if r:
                     var += 2 * r * xi.contribution * xj.contribution
@@ -210,16 +209,24 @@ class Budget:
         return k * self.combined
 
     def by_kind(self, kind: str) -> float:
-        return float(np.sqrt(sum(x.contribution**2
-                                 for x in self.contributions if x.kind == kind)))
+        return float(np.sqrt(sum(x.contribution**2 for x in self.contributions if x.kind == kind)))
 
     def table(self) -> "object":
         import pandas as pd
 
-        rows = [dict(quantity=x.name, value=x.value, u=x.u, kind=x.kind,
-                     sensitivity=x.sensitivity, contribution=x.contribution,
-                     percent=100 * x.contribution**2 / max(self.combined**2, 1e-30),
-                     note=x.note) for x in self.contributions]
+        rows = [
+            dict(
+                quantity=x.name,
+                value=x.value,
+                u=x.u,
+                kind=x.kind,
+                sensitivity=x.sensitivity,
+                contribution=x.contribution,
+                percent=100 * x.contribution**2 / max(self.combined**2, 1e-30),
+                note=x.note,
+            )
+            for x in self.contributions
+        ]
         return pd.DataFrame(rows).sort_values("contribution", ascending=False)
 
 
@@ -245,7 +252,12 @@ def coverage(estimate, truth, sigma, k: float = 1.0) -> dict:
     p = float(inside.mean())
     n = int(m.sum())
     from scipy.stats import norm
+
     expected = float(2 * norm.cdf(k) - 1)
-    return dict(n=n, covered=p, expected=expected,
-                se=float(np.sqrt(max(p * (1 - p), 1e-12) / n)),
-                z=float((p - expected) / max(np.sqrt(expected * (1 - expected) / n), 1e-12)))
+    return dict(
+        n=n,
+        covered=p,
+        expected=expected,
+        se=float(np.sqrt(max(p * (1 - p), 1e-12) / n)),
+        z=float((p - expected) / max(np.sqrt(expected * (1 - expected) / n), 1e-12)),
+    )

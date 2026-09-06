@@ -134,16 +134,16 @@ def linearise_calibrated(I_ratio: np.ndarray, curve) -> np.ndarray:
 # --------------------------------------------------------------------------
 # detector blur and scatter
 # --------------------------------------------------------------------------
-def apply_mtf(I: np.ndarray, sigma_px: float) -> np.ndarray:
+def apply_mtf(intensity: np.ndarray, sigma_px: float) -> np.ndarray:
     """Gaussian detector blur of standard deviation ``sigma_px`` pixels.
 
     Applied to the intensity, wrapping periodically to match the periodic image.
     """
     if sigma_px <= 0:
-        return np.asarray(I, dtype=float)
+        return np.asarray(intensity, dtype=float)
     from scipy.ndimage import gaussian_filter
 
-    return gaussian_filter(np.asarray(I, dtype=float), sigma_px, mode="wrap")
+    return gaussian_filter(np.asarray(intensity, dtype=float), sigma_px, mode="wrap")
 
 
 def gaussian_mtf2(qx: np.ndarray, qy: np.ndarray, sigma_len: float) -> np.ndarray:
@@ -152,15 +152,17 @@ def gaussian_mtf2(qx: np.ndarray, qy: np.ndarray, sigma_len: float) -> np.ndarra
     return np.exp(-q2 * float(sigma_len) ** 2)
 
 
-def add_scatter(I: np.ndarray, fraction: float) -> np.ndarray:
+def add_scatter(intensity: np.ndarray, fraction: float) -> np.ndarray:
     """Add a flat scattered background at ``fraction`` of the mean primary signal.
 
     Scatter is smooth on the scale of the microstructure, so to first order it is
     an additive pedestal.  Its effect is to reduce the apparent attenuation, which
     biases the mean -- and therefore the thickness -- directly.
     """
-    I = np.asarray(I, dtype=float)
-    return I + float(fraction) * float(I.mean()) if fraction > 0 else I
+    intensity = np.asarray(intensity, dtype=float)
+    if fraction <= 0:
+        return intensity
+    return intensity + float(fraction) * float(intensity.mean())
 
 
 def expected_counts(X: np.ndarray, mu: float, N0: float) -> np.ndarray:
@@ -168,9 +170,7 @@ def expected_counts(X: np.ndarray, mu: float, N0: float) -> np.ndarray:
     return N0 * np.exp(-mu * np.asarray(X, dtype=float))
 
 
-def add_noise(
-    counts: np.ndarray, read_noise: float = 0.0, rng: np.random.Generator | None = None
-) -> np.ndarray:
+def add_noise(counts: np.ndarray, read_noise: float = 0.0, rng: np.random.Generator | None = None) -> np.ndarray:
     """Poisson photon noise plus Gaussian read noise."""
     rng = np.random.default_rng() if rng is None else rng
     y = rng.poisson(counts).astype(float)
@@ -179,9 +179,7 @@ def add_noise(
     return y
 
 
-def linearise(
-    Y: np.ndarray, mu: float, N0: float, floor_frac: float = 1e-3
-) -> np.ndarray:
+def linearise(Y: np.ndarray, mu: float, N0: float, floor_frac: float = 1e-3) -> np.ndarray:
     """Invert Beer-Lambert: ``Xhat = -ln(Y/N0)/mu``.
 
     ``Y`` is clipped from below at ``floor_frac * N0`` because read noise can
@@ -248,9 +246,7 @@ def simulate(
     return linearise_calibrated(T, hardening_curve(cs, float(X.max()) * 1.5 + 1e-6))
 
 
-def noise_variance_X(
-    mu: float, N0: float, X_mean: float, read_noise: float = 0.0
-) -> float:
+def noise_variance_X(mu: float, N0: float, X_mean: float, read_noise: float = 0.0) -> float:
     r"""Per-pixel variance of ``Xhat`` from the log linearisation.
 
     .. math::
@@ -265,9 +261,7 @@ def noise_variance_X(
     return (e / N0 + read_noise**2 * e**2 / N0**2) / mu**2
 
 
-def noise_psd(
-    mu: float, N0: float, X_mean: float, p: float, read_noise: float = 0.0
-) -> float:
+def noise_psd(mu: float, N0: float, X_mean: float, p: float, read_noise: float = 0.0) -> float:
     """Flat noise PSD floor ``P_n = sigma_X^2 p^2``, in length**4.
 
     Per-pixel white noise has continuum autocovariance ``sigma_X^2 p^2 delta^2(x)``,
@@ -277,9 +271,7 @@ def noise_psd(
     return noise_variance_X(mu, N0, X_mean, read_noise) * p**2
 
 
-def noise_variance_field(
-    X: np.ndarray, mu: float, N0: float, read_noise: float = 0.0
-) -> float:
+def noise_variance_field(X: np.ndarray, mu: float, N0: float, read_noise: float = 0.0) -> float:
     r"""Exact spatially-averaged noise variance for a *given* projected field.
 
     :func:`noise_variance_X` evaluates the closed form at ``<X>``, but the
@@ -316,16 +308,12 @@ def noise_variance_field(
     return (e1 / N0 + read_noise**2 * e2 / N0**2) / mu**2
 
 
-def noise_psd_field(
-    X: np.ndarray, mu: float, N0: float, p: float, read_noise: float = 0.0
-) -> float:
+def noise_psd_field(X: np.ndarray, mu: float, N0: float, p: float, read_noise: float = 0.0) -> float:
     """Flat noise PSD floor from :func:`noise_variance_field`, in length**4."""
     return noise_variance_field(X, mu, N0, read_noise) * p**2
 
 
-def jensen_factor(
-    X: np.ndarray, mu: float, N0: float, read_noise: float = 0.0
-) -> float:
+def jensen_factor(X: np.ndarray, mu: float, N0: float, read_noise: float = 0.0) -> float:
     """Ratio of the exact field-averaged noise variance to the closed form at <X>."""
     X = np.asarray(X, dtype=float)
     approx = noise_variance_X(mu, N0, float(X.mean()), read_noise)
@@ -340,9 +328,7 @@ def log_bias(mu: float, N0: float, X_mean: float, read_noise: float = 0.0) -> fl
     return (nbar + read_noise**2) / (2.0 * mu * nbar**2)
 
 
-def linearisation_snr(
-    mu: float, N0: float, X_mean: float, read_noise: float = 0.0
-) -> float:
+def linearisation_snr(mu: float, N0: float, X_mean: float, read_noise: float = 0.0) -> float:
     """Per-pixel count SNR ``Nbar / sqrt(Nbar + sigma_r^2)``."""
     if not np.isfinite(N0):
         return np.inf
@@ -350,9 +336,7 @@ def linearisation_snr(
     return nbar / np.sqrt(nbar + read_noise**2)
 
 
-def linearisation_valid(
-    mu: float, N0: float, X_mean: float, read_noise: float = 0.0, threshold: float = 5.0
-) -> bool:
+def linearisation_valid(mu: float, N0: float, X_mean: float, read_noise: float = 0.0, threshold: float = 5.0) -> bool:
     """Whether the log linearisation is trustworthy.
 
     Below ``Nbar/sqrt(Nbar + sigma_r^2) ~ 5`` the transmitted counts approach

@@ -220,8 +220,7 @@ def angular_binning(patchw=32, N=None, subsample=16):
     """
     if N is not None:
         warnings.warn(
-            "angular_binning is now deterministic; the Monte Carlo sample count N "
-            "is ignored.",
+            "angular_binning is now deterministic; the Monte Carlo sample count N " "is ignored.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -266,8 +265,7 @@ def radial_grid(rnb=200, patchw=32, N=None, subsample=16):
     """
     if N is not None:
         warnings.warn(
-            "radial_grid is now deterministic; the Monte Carlo sample count N is "
-            "ignored.",
+            "radial_grid is now deterministic; the Monte Carlo sample count N is " "ignored.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -547,8 +545,7 @@ def average_size_map(
 
     if wmin is None:
         wmin = 2 / logfile["detector"]["resolution"]  # use Nyquist frequency - i.e. 2 pixels per particle
-    _check_wavelength_window(wmax, patchw, logfile["detector"]["resolution"],
-                             "average_size_map")
+    _check_wavelength_window(wmax, patchw, logfile["detector"]["resolution"], "average_size_map")
     min_val = np.argmin(np.abs(wavelength - wmax))  # this is large wavelength, wavelength is sorted large to small
     max_val = np.argmin(np.abs(wavelength - wmin))  # this is small wavelength, wavelength is sorted large to small
     # print(wavelength[min_val],wavelength[max_val])
@@ -631,9 +628,9 @@ def bidisperse_concentration_map(
         normalisation=normalisation,
     )
 
-    _check_wavelength_window(max(s_a, s_b) * pad, patchw,
-                             logfile["detector"]["resolution"],
-                             "bidisperse_concentration_map")
+    _check_wavelength_window(
+        max(s_a, s_b) * pad, patchw, logfile["detector"]["resolution"], "bidisperse_concentration_map"
+    )
     min_val_a = np.argmin(
         np.abs(wavelength - s_a * pad)
     )  # this is large wavelength, wavelength is sorted large to small

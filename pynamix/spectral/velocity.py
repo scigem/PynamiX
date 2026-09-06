@@ -58,7 +58,7 @@ __all__ = [
 class CrossSpectrum:
     qx: np.ndarray
     qy: np.ndarray
-    C: np.ndarray       # complex, unshifted FFT order
+    C: np.ndarray  # complex, unshifted FFT order
     p: float
 
     def qmag(self) -> np.ndarray:
@@ -69,8 +69,9 @@ class CrossSpectrum:
         return np.pi / self.p
 
 
-def cross_spectrum(X1: np.ndarray, X2: np.ndarray, p: float,
-                   window: str = "boxcar", alpha: float = 0.25) -> CrossSpectrum:
+def cross_spectrum(
+    X1: np.ndarray, X2: np.ndarray, p: float, window: str = "boxcar", alpha: float = 0.25
+) -> CrossSpectrum:
     """``C(q) = FFT(X2) conj(FFT(X1))`` with the window-weighted means removed."""
     from .psd import _window2d
 
@@ -91,9 +92,15 @@ def cross_spectrum(X1: np.ndarray, X2: np.ndarray, p: float,
     )
 
 
-def welch_cross_spectrum(X1: np.ndarray, X2: np.ndarray, p: float, roi: int = 256,
-                         overlap: float = 0.5, window: str = "boxcar",
-                         alpha: float = 0.25) -> CrossSpectrum:
+def welch_cross_spectrum(
+    X1: np.ndarray,
+    X2: np.ndarray,
+    p: float,
+    roi: int = 256,
+    overlap: float = 0.5,
+    window: str = "boxcar",
+    alpha: float = 0.25,
+) -> CrossSpectrum:
     """Cross-spectrum averaged over tiled regions of interest.
 
     This averaging is not optional, it is what makes the species fit possible.
@@ -135,8 +142,8 @@ def welch_cross_spectrum(X1: np.ndarray, X2: np.ndarray, p: float, roi: int = 25
     n = 0
     for y0 in ys:
         for x0 in xs:
-            a = X1[y0:y0 + roi, x0:x0 + roi]
-            b = X2[y0:y0 + roi, x0:x0 + roi]
+            a = X1[y0 : y0 + roi, x0 : x0 + roi]
+            b = X2[y0 : y0 + roi, x0 : x0 + roi]
             fa = np.fft.fft2(W * (a - (W * a).sum() / sw))
             fb = np.fft.fft2(W * (b - (W * b).sum() / sw))
             acc += fb * np.conj(fa) * norm
@@ -188,8 +195,7 @@ def phase_correlation_shift(X1: np.ndarray, X2: np.ndarray, p: float) -> np.ndar
     return np.array([sx * p, sy * p])
 
 
-def suggest_band(diameters, p: float, n_pixels: int,
-                  peak_qd: float = 7.5) -> dict:
+def suggest_band(diameters, p: float, n_pixels: int, peak_qd: float = 7.5) -> dict:
     r"""Fit band and region size matched to the *largest* species.
 
     Each species carries its velocity information mainly around its own
@@ -203,8 +209,7 @@ def suggest_band(diameters, p: float, n_pixels: int,
 
     Returns ``{"q_min", "q_max", "roi"}``.
     """
-    d = np.atleast_1d([float(x) for x in (diameters.values()
-                                          if isinstance(diameters, dict) else diameters)])
+    d = np.atleast_1d([float(x) for x in (diameters.values() if isinstance(diameters, dict) else diameters)])
     d_max, d_min = float(d.max()), float(d.min())
     if d_max == d_min:
         # single species: nothing to separate, so use the whole reliable band
@@ -268,8 +273,7 @@ def species_weights(
             S = np.ones_like(w) if a == b else np.zeros_like(w)
             if S_ab is not None and (a, b) in S_ab:
                 S = S_ab[(a, b)]
-            w = w + (np.sqrt(number_density[a] * number_density[b])
-                     * v[a] * v[b] * F[a] * F[b] * S)
+            w = w + (np.sqrt(number_density[a] * number_density[b]) * v[a] * v[b] * F[a] * F[b] * S)
         out[a] = H * w
     return out
 
@@ -282,8 +286,9 @@ def _band(cs: CrossSpectrum, q_min: float, q_max: float):
     return qx, qy, qm[m], cs.C[m]
 
 
-def fit_displacement(cs: CrossSpectrum, q_min: float = 0.0, q_max: float | None = None,
-                     u0: np.ndarray | None = None) -> np.ndarray:
+def fit_displacement(
+    cs: CrossSpectrum, q_min: float = 0.0, q_max: float | None = None, u0: np.ndarray | None = None
+) -> np.ndarray:
     """Single-species displacement from the cross-spectrum phase ramp.
 
     Maximises ``Re sum_q C(q) exp(+i q.u)`` over ``u``: the maximum-likelihood
@@ -300,8 +305,9 @@ def fit_displacement(cs: CrossSpectrum, q_min: float = 0.0, q_max: float | None 
     def neg(u):
         return -float(np.real(C * np.exp(1j * (qx * u[0] + qy * u[1]))).sum())
 
-    res = minimize(neg, np.asarray(u0, dtype=float), method="Nelder-Mead",
-                   options=dict(xatol=1e-6, fatol=1e-9, maxiter=4000))
+    res = minimize(
+        neg, np.asarray(u0, dtype=float), method="Nelder-Mead", options=dict(xatol=1e-6, fatol=1e-9, maxiter=4000)
+    )
     return res.x
 
 
@@ -379,13 +385,12 @@ def fit_species_displacements(
         r = C - M @ A
         return np.concatenate([r.real, r.imag])
 
-    out = least_squares(resid, x0, bounds=(-lim, lim),
-                        xtol=1e-13, ftol=1e-13, max_nfev=20000)
+    out = least_squares(resid, x0, bounds=(-lim, lim), xtol=1e-13, ftol=1e-13, max_nfev=20000)
     M = design(out.x)
     A, *_ = np.linalg.lstsq(M, C, rcond=None)
     r = C - M @ A
     return SpeciesVelocity(
-        displacement={t: out.x[2 * i:2 * i + 2] for i, t in enumerate(types)},
+        displacement={t: out.x[2 * i : 2 * i + 2] for i, t in enumerate(types)},
         amplitude={t: complex(A[i]) for i, t in enumerate(types)},
         residual=float(np.linalg.norm(r) / max(np.linalg.norm(C), 1e-30)),
         success=bool(out.success),

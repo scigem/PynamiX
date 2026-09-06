@@ -122,9 +122,7 @@ def _window2d(shape: tuple[int, int], kind: str, alpha: float) -> np.ndarray:
     return np.outer(taper(ny, kind, alpha), taper(nx, kind, alpha))
 
 
-def periodogram(
-    x: np.ndarray, p: float, window: str = "tukey", alpha: float = 0.25
-) -> Psd2D:
+def periodogram(x: np.ndarray, p: float, window: str = "tukey", alpha: float = 0.25) -> Psd2D:
     """Single-ROI absolute-amplitude periodogram of the field ``x``.
 
     The *window-weighted* mean is removed, so the DC bin is exactly zero.
@@ -219,8 +217,7 @@ def deconvolve_gaussian_mtf(psd: Psd2D, sigma_len: float) -> Psd2D:
     if sigma_len <= 0:
         return psd
     q2 = psd.qy[:, None] ** 2 + psd.qx[None, :] ** 2
-    return Psd2D(psd.qx, psd.qy, psd.P * np.exp(q2 * float(sigma_len) ** 2),
-                 psd.p, psd.n_avg)
+    return Psd2D(psd.qx, psd.qy, psd.P * np.exp(q2 * float(sigma_len) ** 2), psd.p, psd.n_avg)
 
 
 def radial_average(
@@ -261,9 +258,7 @@ def radial_average(
     return RadialPsd(q=q, P=P, n=n, sem=sem)
 
 
-def parseval_residual(
-    x: np.ndarray, p: float, window: str = "tukey", alpha: float = 0.25
-) -> float:
+def parseval_residual(x: np.ndarray, p: float, window: str = "tukey", alpha: float = 0.25) -> float:
     """Relative Parseval residual for :func:`periodogram`; must be ~1e-15.
 
     ``sum(Phat) / (N p)^2 == sum((W dX)^2) / sum(W^2)``.  A pure normalisation

@@ -96,10 +96,8 @@ def _picard(rho, d, sig, r, q, inside, gamma0, mix, tol, max_iter):
                 S = eye
             S_now[:, :, m] = np.real(S)
             gk[:, :, m] = (S - eye) - C
-        gnew = np.array([[_inverse_radial_ft(gk[i, j] / sq[i, j], r, q)
-                          for j in range(n)] for i in range(n)])
-        delta = (np.inf if S_prev is None
-                 else float(np.abs(S_now - S_prev).max()))
+        gnew = np.array([[_inverse_radial_ft(gk[i, j] / sq[i, j], r, q) for j in range(n)] for i in range(n)])
+        delta = np.inf if S_prev is None else float(np.abs(S_now - S_prev).max())
         S_prev = S_now
         if not np.isfinite(delta) and it > 1:
             break
@@ -160,8 +158,7 @@ def py_partials(
     gamma = np.zeros((n, n, n_grid))
     delta, it_tot = np.inf, 0
     for s in range(1, n_steps + 1):
-        gamma, delta, it = _picard(rho * (s / n_steps), d, sig, r, q, inside,
-                                   gamma, mix, tol, max_iter)
+        gamma, delta, it = _picard(rho * (s / n_steps), d, sig, r, q, inside, gamma, mix, tol, max_iter)
         it_tot += it
 
     sq = np.sqrt(np.outer(rho, rho))
@@ -187,8 +184,8 @@ def py_partials(
     converged = bool(np.isfinite(delta) and delta < 1e-3)
     if strict and not converged:
         raise RuntimeError(
-            f"Percus-Yevick iteration did not converge (residual {delta:.2e}); "
-            "the returned partials are not usable")
+            f"Percus-Yevick iteration did not converge (residual {delta:.2e}); " "the returned partials are not usable"
+        )
     if return_result:
         return PYResult(out, converged, float(delta), it_tot)
     return out

@@ -217,11 +217,7 @@ def fit_first_peak(
     try:
         cov = s2 * np.linalg.inv(A.T @ A)
         # var(dq) for dq = -b/2a via the delta method
-        var = (
-            cov[1, 1] / (4 * a**2)
-            + cov[0, 0] * b**2 / (4 * a**4)
-            - cov[0, 1] * b / (2 * a**3)
-        )
+        var = cov[1, 1] / (4 * a**2) + cov[0, 0] * b**2 / (4 * a**4) - cov[0, 1] * b / (2 * a**3)
         sigma_q1 = float(np.sqrt(max(var, 0.0)))
     except np.linalg.LinAlgError:
         sigma_q1 = np.nan
@@ -473,14 +469,13 @@ def fit_size_distribution(
     def resid(x):
         d_mean, cv = abs(x[0]), abs(x[1])
         num, vbar = _chi_model(q, d_mean, max(cv, 1e-3))
-        basis = num / vbar                      # chi / phi
+        basis = num / vbar  # chi / phi
         amp = float(np.sum(w * chi * basis) / max(np.sum(w * basis**2), 1e-30))
         return w * (chi - amp * basis)
 
     bounds = ([0.2 * d0, 1e-3], [5 * d0, 1.0])
     if multistart:
-        starts = [(dm, cv) for dm in np.linspace(0.5 * d0, 2.2 * d0, 7)
-                  for cv in (0.02, 0.10, 0.20, 0.35, 0.55, 0.80)]
+        starts = [(dm, cv) for dm in np.linspace(0.5 * d0, 2.2 * d0, 7) for cv in (0.02, 0.10, 0.20, 0.35, 0.55, 0.80)]
     else:
         starts = [(d0, 0.2 if cv0 is None else cv0)]
     out = None
@@ -498,8 +493,9 @@ def fit_size_distribution(
     basis = num / vbar
     phi = float(np.sum(w * chi * basis) / max(np.sum(w * basis**2), 1e-30))
     r = w * (chi - phi * basis)
-    return SizeDistribution(phi=phi, d_mean=d_mean, cv=cv,
-                            residual=float(np.linalg.norm(r) / max(np.linalg.norm(w * chi), 1e-30)))
+    return SizeDistribution(
+        phi=phi, d_mean=d_mean, cv=cv, residual=float(np.linalg.norm(r) / max(np.linalg.norm(w * chi), 1e-30))
+    )
 
 
 @dataclass(frozen=True)
@@ -583,8 +579,7 @@ def profile_d32(
     prof = np.empty_like(grid)
     cvs = np.empty_like(grid)
     for i, g in enumerate(grid):
-        r = minimize_scalar(lambda c: -ell_at(g, c)[0], bounds=(1e-3, 0.95),
-                            method="bounded", options={"xatol": 1e-6})
+        r = minimize_scalar(lambda c: -ell_at(g, c)[0], bounds=(1e-3, 0.95), method="bounded", options={"xatol": 1e-6})
         prof[i] = -r.fun
         cvs[i] = float(np.clip(r.x, 1e-3, 0.95))
     k = int(np.argmax(prof))
@@ -594,8 +589,7 @@ def profile_d32(
     lo, hi = float(grid[idx[0]]), float(grid[idx[-1]])
     identifiable = bool(idx[0] > 0 and idx[-1] < n_grid - 1)
     _, amp, cv = ell_at(grid[k], cvs[k])
-    return D32Profile(d32=float(grid[k]), lo=lo, hi=hi, phi=amp, cv=cv,
-                      grid=grid, ell=prof, identifiable=identifiable)
+    return D32Profile(d32=float(grid[k]), lo=lo, hi=hi, phi=amp, cv=cv, grid=grid, ell=prof, identifiable=identifiable)
 
 
 def fit_first_peak_ml(
@@ -646,8 +640,7 @@ def fit_first_peak_ml(
         q1, lw, la, b0, b1 = theta
         width = np.exp(lw)
         amp = np.exp(la)
-        return (b0 + b1 * (qq - q1)
-                + amp * np.exp(-0.5 * ((qq - q1) / width) ** 2))
+        return b0 + b1 * (qq - q1) + amp * np.exp(-0.5 * ((qq - q1) / width) ** 2)
 
     def neg_ll(theta):
         mu = model(theta)
@@ -656,8 +649,7 @@ def fit_first_peak_ml(
         return float(np.sum(nn * (ss / mu + np.log(mu))))
 
     x0 = np.array([q_peak, np.log(0.6), np.log(amp0), max(base, 1e-3), 0.0])
-    res = minimize(neg_ll, x0, method="Nelder-Mead",
-                   options=dict(xatol=1e-8, fatol=1e-10, maxiter=20000, maxfev=20000))
+    res = minimize(neg_ll, x0, method="Nelder-Mead", options=dict(xatol=1e-8, fatol=1e-10, maxiter=20000, maxfev=20000))
     q1, lw, la, b0, b1 = res.x
     width = float(np.exp(lw))
     if not (qq.min() < q1 < qq.max()) or not res.success:
@@ -673,15 +665,19 @@ def fit_first_peak_ml(
     Hn = np.zeros((k, k))
     f0 = neg_ll(res.x)
     for i in range(k):
-        ei = np.zeros(k); ei[i] = steps[i]
+        ei = np.zeros(k)
+        ei[i] = steps[i]
         for j in range(i, k):
-            ej = np.zeros(k); ej[j] = steps[j]
+            ej = np.zeros(k)
+            ej[j] = steps[j]
             if i == j:
                 Hn[i, i] = (neg_ll(res.x + ei) - 2 * f0 + neg_ll(res.x - ei)) / steps[i] ** 2
             else:
                 Hn[i, j] = Hn[j, i] = (
-                    neg_ll(res.x + ei + ej) - neg_ll(res.x + ei - ej)
-                    - neg_ll(res.x - ei + ej) + neg_ll(res.x - ei - ej)
+                    neg_ll(res.x + ei + ej)
+                    - neg_ll(res.x + ei - ej)
+                    - neg_ll(res.x - ei + ej)
+                    + neg_ll(res.x - ei - ej)
                 ) / (4 * steps[i] * steps[j])
     try:
         cov = np.linalg.inv(Hn)

@@ -45,9 +45,7 @@ def hist_GUI(data, vmin=0, vmax=65535):
         from ipywidgets import interactive, fixed
         import ipywidgets as widgets
     except ImportError as e:  # pragma: no cover - depends on the install
-        raise ImportError(
-            "hist_GUI needs the interactive extra: pip install pynamix[interactive]"
-        ) from e
+        raise ImportError("hist_GUI needs the interactive extra: pip install pynamix[interactive]") from e
 
     # frame = 0
     if len(data.shape) == 2:

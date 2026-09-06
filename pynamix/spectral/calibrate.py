@@ -52,8 +52,7 @@ class Calibration:
         self.Q1_err = np.asarray(self.Q1_err, dtype=float)[order]
 
         X = np.vander(self.phi, self.deg + 1, increasing=True)
-        w = 1.0 / np.maximum(self.Q1_err, 1e-12) ** 2 if np.all(self.Q1_err > 0) \
-            else np.ones_like(self.phi)
+        w = 1.0 / np.maximum(self.Q1_err, 1e-12) ** 2 if np.all(self.Q1_err > 0) else np.ones_like(self.phi)
         W = np.diag(w)
         XtWX = X.T @ W @ X
         self.coef = np.linalg.solve(XtWX, X.T @ W @ self.Q1)
@@ -66,8 +65,7 @@ class Calibration:
         self.u_scatter = float(np.sqrt(float(resid @ resid) / dof))
 
     def _x(self, phi):
-        return np.vander(np.atleast_1d(np.asarray(phi, dtype=float)),
-                         self.deg + 1, increasing=True)
+        return np.vander(np.atleast_1d(np.asarray(phi, dtype=float)), self.deg + 1, increasing=True)
 
     def __call__(self, phi):
         out = self._x(phi) @ self.coef
@@ -90,8 +88,7 @@ class Calibration:
         s = np.atleast_1d(self.sensitivity(g))
         return bool(np.all(s > 0) or np.all(s < 0))
 
-    def invert(self, Q1_obs: float, Q1_err: float = 0.0,
-               u_structural: float = 0.0) -> tuple[float, float]:
+    def invert(self, Q1_obs: float, Q1_err: float = 0.0, u_structural: float = 0.0) -> tuple[float, float]:
         r"""Inverse map with full propagation.
 
         .. math::
@@ -104,15 +101,15 @@ class Calibration:
         vals = np.atleast_1d(self(grid))
         if not (vals.min() <= Q1_obs <= vals.max()):
             return float("nan"), float("nan")
-        phi_hat = float(np.interp(Q1_obs, vals, grid) if vals[0] < vals[-1]
-                        else np.interp(Q1_obs, vals[::-1], grid[::-1]))
+        phi_hat = float(
+            np.interp(Q1_obs, vals, grid) if vals[0] < vals[-1] else np.interp(Q1_obs, vals[::-1], grid[::-1])
+        )
         slope = float(self.sensitivity(phi_hat))
         u_tot = np.sqrt(Q1_err**2 + u_structural**2 + self.curve_uncertainty(phi_hat) ** 2)
         return phi_hat, (abs(u_tot / slope) if slope != 0 else float("inf"))
 
 
-def fit_calibration(phi, Q1, Q1_err=None, protocol: str = "unknown",
-                    deg: int = 1) -> Calibration:
+def fit_calibration(phi, Q1, Q1_err=None, protocol: str = "unknown", deg: int = 1) -> Calibration:
     """Fit ``f1(phi)`` to the individual measurements (not to per-density means).
 
     Fitting the individual points keeps the degrees of freedom honest and lets
@@ -121,14 +118,11 @@ def fit_calibration(phi, Q1, Q1_err=None, protocol: str = "unknown",
     """
     phi = np.asarray(phi, dtype=float)
     Q1 = np.asarray(Q1, dtype=float)
-    Q1_err = (np.zeros_like(Q1) if Q1_err is None
-              else np.asarray(Q1_err, dtype=float))
+    Q1_err = np.zeros_like(Q1) if Q1_err is None else np.asarray(Q1_err, dtype=float)
     return Calibration(phi, Q1, Q1_err, protocol, deg)
 
 
-def infer_H(
-    X_mean: float, phi: float, X_mean_err: float = 0.0, phi_err: float = 0.0
-) -> tuple[float, float]:
+def infer_H(X_mean: float, phi: float, X_mean_err: float = 0.0, phi_err: float = 0.0) -> tuple[float, float]:
     r"""``H = <X>/phi`` with propagated relative errors.
 
     .. math::
@@ -137,6 +131,5 @@ def infer_H(
         + \left(\frac{\sigma_\phi}{\phi}\right)^2
     """
     H = X_mean / phi
-    rel = np.hypot(X_mean_err / X_mean if X_mean else 0.0,
-                   phi_err / phi if phi else 0.0)
+    rel = np.hypot(X_mean_err / X_mean if X_mean else 0.0, phi_err / phi if phi else 0.0)
     return float(H), float(H * rel)

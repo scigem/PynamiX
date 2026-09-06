@@ -39,8 +39,7 @@ normalisation
 See :mod:`pynamix.spectral.compat` for the bridge between the two.
 """
 
-from . import (calibrate, closure, compat, detector, invert, psd, uncertainty,
-               units, velocity)
+from . import calibrate, closure, compat, detector, invert, psd, uncertainty, units, velocity
 from .calibrate import Calibration, fit_calibration, infer_H
 from .invert import (
     concentration_from_porod,
@@ -70,15 +69,39 @@ from .velocity import (
 )
 
 __all__ = [
-    "calibrate", "closure", "detector", "invert", "psd", "uncertainty", "units",
-    "velocity", "compat",
-    "Calibration", "fit_calibration", "infer_H",
-    "recover_S", "fit_first_peak", "fit_first_peak_ml", "fit_self_term",
-    "fit_size_distribution", "porod_fit", "profile_d32",
-    "concentration_from_porod", "concentration_from_self_term",
-    "periodogram", "welch_psd2d", "radial_average",
-    "deconvolve_pixel_mtf", "deconvolve_gaussian_mtf",
-    "form_factor", "sphere_volume", "specific_surface", "sauter_diameter",
-    "cross_spectrum", "welch_cross_spectrum", "species_weights",
-    "suggest_band", "fit_species_displacements",
+    "calibrate",
+    "closure",
+    "detector",
+    "invert",
+    "psd",
+    "uncertainty",
+    "units",
+    "velocity",
+    "compat",
+    "Calibration",
+    "fit_calibration",
+    "infer_H",
+    "recover_S",
+    "fit_first_peak",
+    "fit_first_peak_ml",
+    "fit_self_term",
+    "fit_size_distribution",
+    "porod_fit",
+    "profile_d32",
+    "concentration_from_porod",
+    "concentration_from_self_term",
+    "periodogram",
+    "welch_psd2d",
+    "radial_average",
+    "deconvolve_pixel_mtf",
+    "deconvolve_gaussian_mtf",
+    "form_factor",
+    "sphere_volume",
+    "specific_surface",
+    "sauter_diameter",
+    "cross_spectrum",
+    "welch_cross_spectrum",
+    "species_weights",
+    "suggest_band",
+    "fit_species_displacements",
 ]
