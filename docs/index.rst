@@ -17,6 +17,7 @@ There are also some jupyter notebook included in the package that contains a hel
 .. toctree::
 
    notebooks/PynamiX-Examples
+   notebooks/Spectral
    notebooks/Fibres
    notebooks/Eranga
    notebooks/NormaliseRotation
