@@ -28,6 +28,8 @@ from pynamix.pdvc.phantom import project_spheres, sphere_packing
 from pynamix.spectral.tomography import (
     Field,
     SpeciesTomography,
+    composition_states,
+    mixture_fields_by_composition,
     _gradient_operator,
     mixture_fields,
     population_field,
@@ -61,6 +63,9 @@ def parse(argv=None):
     ap.add_argument("--qd-min", type=float, default=8.0, help="lower band edge, as q d_small in the object")
     ap.add_argument("--reg", type=float, default=1e-3)
     ap.add_argument(
+        "--local-structure", action="store_true", help="third pass with interference from the local composition"
+    )
+    ap.add_argument(
         "--no-structure", dest="structure", action="store_false", help="self term only, no grain interference"
     )
     ap.add_argument("--spectra-weight", type=float, default=1.0, help="0 fits the patch means alone")
@@ -69,7 +74,8 @@ def parse(argv=None):
     ap.add_argument("--ref-elem", type=int, default=None, help="3D mesh of the realised reference (default: same)")
     ap.add_argument("--ref-knots", type=int, default=None, help="time knots of the realised reference")
     ap.add_argument("--eval-taus", type=int, default=11, help="times at which errors are evaluated")
-    ap.add_argument("--layers", action="store_true", help="fields vary with height only (baseline)")
+    ap.add_argument("--pattern", choices=["layered", "lateral", "rotating"], default="layered", help="target fields")
+    ap.add_argument("--layers", action="store_true", help="fields constant across each layer of nodes (baseline)")
     ap.add_argument("--duration", type=float, default=None, help="fraction of the turn over which the change happens")
     ap.add_argument("--wall", action="store_true", help="pack against the container wall, leaving a wall layer")
     ap.add_argument("--wall-model", action="store_true", help="add a field in a shell at the wall per population")
@@ -82,8 +88,8 @@ def parse(argv=None):
 class Fields:
     """Target solid fraction and large-grain fraction of the solid."""
 
-    def __init__(self, R, H, phi, duration=None):
-        self.R, self.H, self.phi0, self.duration = R, H, phi, duration
+    def __init__(self, R, H, phi, duration=None, pattern="layered"):
+        self.R, self.H, self.phi0, self.duration, self.pattern = R, H, phi, duration, pattern
 
     def progress(self, tau):
         """Fraction of the change done by time tau: tau itself, or a smooth step lasting ``duration``."""
@@ -95,12 +101,31 @@ class Fields:
     def phi(self, x, tau):
         R, H = self.R, self.H
         column = np.exp(-((x[:, 0] - 0.4 * R) ** 2 + x[:, 1] ** 2) / (0.35 * R) ** 2)
+        if self.pattern == "rotating":
+            th = 0.5 * np.pi * self.progress(tau)
+            cx, cy = 0.45 * R * np.cos(th), 0.45 * R * np.sin(th)
+            loose = np.exp(-((x[:, 0] - cx) ** 2 + (x[:, 1] - cy) ** 2) / (0.35 * R) ** 2)
+            dense = np.exp(-((x[:, 0] + cx) ** 2 + (x[:, 1] + cy) ** 2) / (0.35 * R) ** 2)
+            return self.phi0 - 0.05 * loose + 0.03 * dense
+        if self.pattern == "lateral":
+            dense = np.exp(-((x[:, 0] + 0.4 * R) ** 2 + x[:, 1] ** 2) / (0.35 * R) ** 2)
+            p = self.progress(tau)
+            return self.phi0 - 0.02 * x[:, 2] / H - 0.06 * p * column + 0.03 * p * dense
         return self.phi0 - 0.04 * x[:, 2] / H - 0.06 * self.progress(tau) * column
 
     def large(self, x, tau):
         R, H = self.R, self.H
         r2 = (x[:, 0] ** 2 + x[:, 1] ** 2) / R**2
-        c = 0.5 + self.progress(tau) * (0.35 * np.tanh(x[:, 2] / (0.4 * H)) + 0.2 * (r2 - 0.5))
+        if self.pattern == "rotating":
+            # large grains on one side, small on the other, the dividing direction turning by 90 degrees
+            th = 0.5 * np.pi * self.progress(tau)
+            c = 0.5 + 0.4 * (x[:, 0] * np.cos(th) + x[:, 1] * np.sin(th)) / R
+        elif self.pattern == "lateral":
+            # large grains move across the specimen and outwards, with a twist that changes with height
+            lateral = 0.3 * x[:, 0] / R + 0.15 * (x[:, 1] / R) * (x[:, 2] / H) + 0.2 * (r2 - 0.5)
+            c = 0.5 + self.progress(tau) * lateral
+        else:
+            c = 0.5 + self.progress(tau) * (0.35 * np.tanh(x[:, 2] / (0.4 * H)) + 0.2 * (r2 - 0.5))
         return np.clip(c, 0.02, 0.98)
 
     def species(self, x, tau):
@@ -354,11 +379,75 @@ def errors_porod(rec, ref):
     return dict(phi=rms(rec[:, 0] - ref[:, 0]), d32=rms(6 * rec[:, 0] / rec[:, 1] - 6 * ref[:, 0] / ref[:, 1]))
 
 
+def reconstruct(args, geom, mesh, basis, times, spec, means, pops, tapers, extra, radii, R, H):
+    """Run the reconstruction passes. Returns (fields of the first pass, nodal fields, last tomography)."""
+    ds, dl = args.d_small, args.d_large
+    tie = None
+    if args.layers:
+        # one unknown per layer of nodes: fields vary with height only
+        nz = mesh.node_shape[0]
+        tie = np.kron(np.eye(nz), np.ones((mesh.n_nodes // nz, 1)))
+    if args.model == "porod":
+        # solid fraction from the means, specific surface from the Porod tail; taper at the mean radius
+        tm = [lambda x: taper(x, R, H, float(np.mean(radii)))]
+        flds = [Field("phi", lambda k: 0.0 * k, 1.0, tm[0]), porod_field(weight=tm[0])]
+    elif args.cv > 0:
+        # each population's kernel averages v F^2 over its bins (self term only)
+        flds = [population_field(dj, fj, weight=tapers[a]) for a, (dj, fj) in enumerate(pops)]
+    else:
+        flds = [species_field(ds, tapers[0]), species_field(dl, tapers[1])]
+    tomo = SpeciesTomography(geom, mesh, basis, times, None, spec, means=means, fields=flds + extra, tie=tie)
+    phi = tomo.solve(reg=args.reg, spectra_weight=args.spectra_weight, verbose=False)
+    if args.structure and args.model == "species":
+        # second pass: interference terms at the mean composition of the first reconstruction;
+        # every diameter bin is a species of the mixture, grouped back into the two populations
+        mean_phi = np.clip(field_values(phi, mesh, basis, R, H).mean((0, 2))[:2], 1e-3, None)
+        dbins = np.concatenate([dj for dj, _ in pops])
+        phibins = np.concatenate([mean_phi[a] * fj for a, (_, fj) in enumerate(pops)])
+        grp = [list(range(len(pops[0][0]))), list(range(len(pops[0][0]), len(dbins)))]
+        mfields = mixture_fields(dbins, phibins, weights=tapers, groups=grp)
+        tomo = SpeciesTomography(geom, mesh, basis, times, None, spec, means=means, fields=mfields + extra, tie=tie)
+        phi = tomo.solve(reg=args.reg, spectra_weight=args.spectra_weight, verbose=False)
+        if args.local_structure:
+            # third pass: kernels follow the large-population fraction of the second pass at every point
+            c_states = np.linspace(0, 1, 5)
+            shares = [fj for _, fj in pops]
+            lfields = mixture_fields_by_composition(
+                dbins, float(mean_phi.sum()), c_states, weights=tapers, groups=grp, shares=shares
+            )
+            cw = composition_states(c_states)
+            prev = phi
+
+            def state_weights(pts, i, prev=prev):
+                N = trilinear_weights(pts, mesh.vol_shape, mesh.node_shape)
+                f = np.einsum("k,kan->an", tomo_basis_row(i), prev[:, :2])
+                ps, pl = np.maximum(N @ f[0], 1e-4), np.maximum(N @ f[1], 1e-4)
+                return cw(pl / (ps + pl))
+
+            def tomo_basis_row(i):
+                return basis(np.array([times[i]]))[0]
+
+            tomo = SpeciesTomography(
+                geom,
+                mesh,
+                basis,
+                times,
+                None,
+                spec,
+                means=means,
+                fields=lfields + extra,
+                state_weights=state_weights,
+                tie=tie,
+            )
+            phi = tomo.solve(reg=args.reg, spectra_weight=args.spectra_weight, verbose=False)
+    return flds, phi, tomo
+
+
 def run(args):
     rng = np.random.default_rng(args.seed)
     R, H = args.radius, args.half_height
     ds, dl = args.d_small, args.d_large
-    fields = Fields(R, H, args.phi, args.duration)
+    fields = Fields(R, H, args.phi, args.duration, args.pattern)
     angles = np.linspace(0, 2 * np.pi, args.n_proj, endpoint=False)
     times = np.linspace(0, 1, args.n_proj)
     sod, sdd = 10 * R, 15 * R
@@ -376,6 +465,8 @@ def run(args):
         tag += "_wall"
     if args.duration is not None:
         tag += f"_dur{args.duration}"
+    if args.pattern != "layered":
+        tag += f"_{args.pattern}"
     cached = args.cache / f"data_{tag}.npz" if args.cache else None
     if cached is not None and cached.exists():
         z = np.load(cached)
@@ -428,27 +519,7 @@ def run(args):
     mesh = RegularHexMesh(vol, (args.elem, 1, 1) if args.layers else args.elem)
     basis = LinearTimeBasis(args.knots)
     t0 = time.time()
-    if args.model == "porod":
-        # solid fraction from the means, specific surface from the Porod tail; taper at the mean radius
-        tm = [lambda x: taper(x, R, H, float(np.mean(radii)))]
-        flds = [Field("phi", lambda k: 0.0 * k, 1.0, tm[0]), porod_field(weight=tm[0])]
-    elif args.cv > 0:
-        # each population's kernel averages v F^2 over its bins (self term only)
-        flds = [population_field(dj, fj, weight=tapers[a]) for a, (dj, fj) in enumerate(pops)]
-    else:
-        flds = [species_field(ds, tapers[0]), species_field(dl, tapers[1])]
-    tomo = SpeciesTomography(geom, mesh, basis, times, None, spec, means=means, fields=flds + extra)
-    phi = tomo.solve(reg=args.reg, spectra_weight=args.spectra_weight, verbose=False)
-    if args.structure and args.model == "species":
-        # second pass: interference terms at the mean composition of the first reconstruction;
-        # every diameter bin is a species of the mixture, grouped back into the two populations
-        mean_phi = np.clip(field_values(phi, mesh, basis, R, H).mean((0, 2))[:2], 1e-3, None)
-        dbins = np.concatenate([dj for dj, _ in pops])
-        phibins = np.concatenate([mean_phi[a] * fj for a, (_, fj) in enumerate(pops)])
-        grp = [list(range(len(pops[0][0]))), list(range(len(pops[0][0]), len(dbins)))]
-        mfields = mixture_fields(dbins, phibins, weights=tapers, groups=grp)
-        tomo = SpeciesTomography(geom, mesh, basis, times, None, spec, means=means, fields=mfields + extra)
-        phi = tomo.solve(reg=args.reg, spectra_weight=args.spectra_weight, verbose=False)
+    flds, phi, tomo = reconstruct(args, geom, mesh, basis, times, spec, means, pops, tapers, extra, radii, R, H)
     t_solve = time.time() - t0
     n_fields = phi.shape[1]
     phi = phi[:, :2]  # bulk fields only; wall fields are not evaluated
@@ -516,7 +587,10 @@ def run(args):
         gx = mass_diagonal(rmesh, Rv, Hv)
         pv = np.sqrt(np.maximum(vp, 0) * (np.pi * np.array([ds, dl]) ** 3 / 6)[None, :, None])  # sqrt(phi_a v_a)
         var = np.einsum("ab,tap,tbp->tp", S0, pv, pv) * gx  # total phi, with cross-correlation
-        fl = np.stack([np.sqrt(S0[0, 0] * gx) * pv[:, 0], np.sqrt(S0[1, 1] * gx) * pv[:, 1], np.sqrt(var)], 1)
+        fl_l = np.sqrt(S0[1, 1] * gx) * pv[:, 1]
+        # the total is fixed by the means and the large species by the spectra, so the small species
+        # inherits both floors: phi_small = phi - phi_large, the two errors taken as independent
+        fl = np.stack([np.sqrt(var + fl_l**2), fl_l, np.sqrt(var)], 1)
         result["uncertainty_with_floor"] = coverage(vp, vr, np.sqrt(sig**2 + fl**2))
     if args.model == "porod":
         # realised specific surface: each grain counts its surface area 6 v / d

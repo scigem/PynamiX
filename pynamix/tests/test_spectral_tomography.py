@@ -14,6 +14,8 @@ from pynamix.pdvc import ConeBeamGeometry, LinearTimeBasis, RegularHexMesh
 from pynamix.pdvc.phantom import project_spheres, sphere_packing
 from pynamix.spectral.tomography import (
     SpeciesTomography,
+    composition_states,
+    mixture_fields_by_composition,
     mixture_fields,
     patch_spectra,
     population_field,
@@ -49,6 +51,23 @@ class TestFields(unittest.TestCase):
         sphere = species_field(d).chi(k) * k**4
         porod = porod_field().chi(k) * (6 / d) * k**4
         self.assertAlmostEqual(sphere.mean() / porod.mean(), 1.0, delta=0.02)
+
+
+class TestCompositionStates(unittest.TestCase):
+    """Kernels that follow the local composition."""
+
+    def test_state_weights_are_hat_functions(self):
+        w = composition_states([0.0, 0.5, 1.0])(np.array([0.0, 0.25, 0.5, 0.9, 1.2]))
+        self.assertTrue(np.allclose(w.sum(0), 1))
+        self.assertTrue(np.allclose(w[:, 1], [0.5, 0.5, 0]))
+        self.assertTrue(np.allclose(w[:, 4], [0, 0, 1]))
+
+    def test_states_match_mixture_at_their_composition(self):
+        k = np.linspace(2.0, 4.0, 30)
+        f = mixture_fields_by_composition([5.0, 10.0], 0.3, [0.25, 0.75])
+        ref = mixture_fields([5.0, 10.0], [0.3 * 0.25, 0.3 * 0.75])
+        self.assertEqual(len(f[0].chi), 2)
+        self.assertTrue(np.allclose(f[1].chi[1](k), ref[1].chi(k)))
 
 
 class TestSpeciesTomography(unittest.TestCase):

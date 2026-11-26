@@ -209,8 +209,12 @@ variance of the grain count, reduced by the partial structure factor at
 q -> 0 (S_ll(0) = 0.42 here), projected onto the mesh. Large-grain errors
 fall as the inverse square root of the number of large grains per element,
 from 0.018 at 78 per element to 0.0054 at 1200, and stop falling near 0.005.
-Small-grain errors are about 1.6 times their counting estimate, so for them
-the reconstruction adds noise of its own.
+Small-grain errors are about 1.6 times their own counting estimate. They
+are not a separate problem: the patch means fix the total φ_small + φ_large
+closely, so the large-grain error reappears with the opposite sign in the
+small-grain field (the errors of the two are correlated at -0.6 to -0.8).
+The natural outputs are therefore the solid fraction and the large-grain
+fraction of the solid, with φ_small derived from them.
 
 ![Sensitivity to noise, pixel size, projections, seed and size ratio](figures/segregation_study.png)
 
@@ -235,11 +239,35 @@ best choice: the large-grain fraction error is 0.026, 0.025 and 0.029 for a
 change over the whole, half and quarter turn. Three knots cannot follow a
 quarter-turn change (0.041); six or eight add unknowns and noise (0.035-0.042).
 
-Three dimensions against layers. Fields allowed to vary only with height,
-fitted to the same radiographs, give a large-grain fraction error of 0.031
-to 0.041 against 0.023 for the 3D reconstruction, compared on a common 3D
-reference. The phantom is mostly layered, so this is a lower bound on what
-the tomography adds.
+Three dimensions against layers. As a baseline, the same radiographs were
+fitted with fields constant across each horizontal layer, which is what a
+method assuming no lateral variation could recover. Against a common 3D
+reference the large-grain fraction errors are:
+
+| Phantom | 3D | Layers only |
+|---|---|---|
+| Segregation mainly with height (default) | 0.023 | 0.028-0.032 |
+| Lateral segregation and a twist with height | 0.024 | 0.050 |
+| Side-to-side segregation turning by 90° during the turn | 0.027 | 0.109 |
+
+![Rotating side-to-side segregation: realised and reconstructed](figures/rotating.png)
+
+The gain from 3D grows with the lateral structure, as it should; on the
+mostly layered default phantom the lateral signal in the realised fields
+(0.008 in φ_large) is no larger than the reconstruction error, so little
+can be gained there.
+
+Ends of the sequence. The first and last time knots are constrained by
+radiographs on one side only, and the errors there are about twice those
+in the middle of the turn (0.04 against 0.02 in the large-grain fraction).
+In an experiment the acquisition should start before and end after the
+period of interest.
+
+Local interference. Kernels that follow the local large-grain fraction,
+taken from the previous reconstruction and interpolated between five
+compositions, change the errors by less than 0.0002 on both the default and
+the lateral phantom. The mean composition is enough for the range of
+compositions here (large-grain fraction 0.2-0.8).
 
 Wall layers. Packings generated against the container wall carry a layer
 of crowded grains. Compared in the interior (at least 20 voxels from the
@@ -247,20 +275,26 @@ surface), the solid fraction error is 0.011 without a wall layer, 0.017 with
 one, and 0.013 with one when the model has a field confined to a shell at
 the wall.
 
-Polydispersity. With each population given a Schulz size distribution
-(coefficient of variation 0.25, four bins), fields for the two populations
-with kernels averaged over their bins and interference among all eight bins
-give errors of 0.013 and 0.014 in the two volume fractions, about twice the
-single-size case. A model with only solid fraction and specific surface (the
-Porod tail) gives d32 to 0.20 voxels when the band reaches q d_small = 19
-(pixel 0.75 voxels), and fails with a narrow band.
+Polydispersity. Each population was given a Schulz size distribution
+(four bins), with population kernels averaged over their bins and
+interference among all eight bins. At a coefficient of variation of 0.25
+the volume fraction errors are 0.010-0.014 (pixel 0.75 to 1 voxel), and at
+0.5 they are 0.009 and 0.016, with d32 to 0.18-0.25 voxels. A model with
+only solid fraction and specific surface (the Porod tail), which needs no
+species, gives d32 to 0.20 voxels for single sizes when the band reaches
+q d_small = 19, but 0.62-0.64 voxels for the two size distributions, where
+the tail at that band is not yet the Porod limit for the small grains. The
+population model is the better choice whenever the populations' size
+distributions are known, for example from sieving.
 
 Uncertainty. The posterior covariance of the least-squares fit alone
-predicts errors three times too small. Adding the counting floor of the
-realised field brings the fraction of points within one predicted standard
-deviation to 64-74% for the large-grain fraction and 61-80% for the solid
-fraction over four seeds (two standard deviations: 89-98%); the small-grain
-fraction stays under-covered (52-59% within one).
+predicts errors three times too small, because the realised fields
+themselves are defined only to the counting floor. Adding that floor gives,
+over four seeds, 61-80% of points within one predicted standard deviation
+for the solid fraction and 64-74% for φ_large (two standard deviations:
+89-98%). For φ_small the floor must include the large grains' floor (see
+above); with the two taken as independent, 85-89% of points fall within one
+standard deviation, so that prediction is conservative.
 
 ### Lessons from building the test
 
@@ -287,16 +321,19 @@ These took most of the effort and apply equally to real data.
 - References. Errors must be measured against the fields the packings
   realised, on a basis shared by every reconstruction being compared;
   measuring each against a reference in its own basis hid both the cost of
-  too few time knots and the benefit of 3D.
+  too few time knots and the benefit of 3D. A baseline must also be what it
+  claims: a mesh with one element across the specimen is still bilinear
+  across it, and represents any linear lateral gradient.
 
 ## Open questions
 
-- Small grains. Their errors exceed the counting floor by a factor of 1.6
-  and their predicted uncertainties are too small.
-- Interference with spatially varying composition. The kernel uses the
-  mean composition; iterating it on the local composition is not done.
-- Porod model. It needs a band reaching q d_small of about 19; its
-  behaviour for wide size distributions is untested.
+- Ends of the sequence. Errors double at the first and last knots; longer
+  acquisitions or a temporal penalty would address it.
+- Wide size distributions without known populations. The Porod model needs
+  a band well into the Porod regime of the smallest grains.
+- Wall layers on real packings. The shell field was tested on packings from
+  random sequential addition; real wall layering oscillates over a few
+  diameters.
 - Detector. Real data need flat and dark correction, linearisation for beam
   hardening, the detector blur and the calibrated pose of every radiograph.
   `pynamix.spectral.detector` has much of this for a single view.

@@ -194,8 +194,9 @@ those terms and `--multiscale` uses the default levels.
   dynamic poses. Interpolating reference projections in angle is not
   implemented. With a gain term, gain drift that multiplies the contribution
   of material outside K is not captured.
-- Species fractions: interference uses the mean composition rather than the
-  local one; small-grain errors exceed their counting floor.
+- Species fractions: errors double at the first and last time knots; the
+  Porod model needs a band well into the Porod regime of the smallest
+  grains; the wall-layer term has been tested on synthetic packings only.
   Species velocities from the cross-spectra of consecutive projections are
   not implemented. `docs/pdvc/research-note.md` describes the plan.
 - Mechanical (equilibrium-gap) regularisation in place of the gradient penalty.

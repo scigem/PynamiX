@@ -219,7 +219,9 @@ class Field:
     0 for a specific surface). ``weight``: optional function of points (n, 3)
     returning a fixed factor the field is multiplied by (a taper at the
     specimen surface, or the shape of a wall layer). ``reg``: multiplier of
-    the gradient penalty for this field.
+    the gradient penalty for this field. ``chi`` may also be a list, one
+    function per state (for example per local composition); the
+    reconstruction then mixes them with its ``state_weights``.
     """
 
     name: str
@@ -292,6 +294,52 @@ def mixture_fields(diameters, phi_mean, weights=None, k_max=None, n_k=800, reg=1
     return fields
 
 
+def composition_states(c_states):
+    """Hat-function weights over a grid of large-species fractions, for :class:`SpeciesTomography`.
+
+    Returns ``weights(c)`` mapping fractions c (n,) to (n_states, n) weights summing to one.
+    """
+    cs = np.asarray(c_states, dtype=float)
+
+    def weights(c):
+        c = np.clip(np.asarray(c, dtype=float), cs[0], cs[-1])
+        j = np.clip(np.searchsorted(cs, c) - 1, 0, cs.size - 2)
+        t = (c - cs[j]) / (cs[j + 1] - cs[j])
+        out = np.zeros((cs.size, c.size))
+        out[j, np.arange(c.size)] = 1 - t
+        out[j + 1, np.arange(c.size)] += t
+        return out
+
+    return weights
+
+
+def mixture_fields_by_composition(diameters, phi_total, c_states, weights=None, reg=1.0, groups=None, shares=None):
+    """Two-population fields whose interference terms follow the local composition.
+
+    For each large-population fraction c in ``c_states`` the mixture kernels of
+    :func:`mixture_fields` are computed at solid fraction ``phi_total``; the
+    returned fields carry one chi per state. ``groups`` and ``shares`` split each
+    population into diameter bins (indices into ``diameters`` and their volume
+    shares within the population); by default each population is one diameter.
+    """
+    d = np.asarray(diameters, dtype=float)
+    groups = groups if groups is not None else [[0], [1]]
+    shares = shares if shares is not None else [np.ones(len(g)) / len(g) for g in groups]
+    per_state = []
+    for c in c_states:
+        c = float(np.clip(c, 0.02, 0.98))
+        phis = np.zeros(d.size)
+        for frac, g, sh in zip((1 - c, c), groups, shares):
+            phis[g] = phi_total * frac * np.asarray(sh)
+        per_state.append(mixture_fields(d, phis, groups=groups))
+    fields = []
+    for g in range(len(groups)):
+        f0 = per_state[0][g]
+        w = weights[g] if weights is not None else None
+        fields.append(Field(f0.name, [st[g].chi for st in per_state], 1.0, w, reg))
+    return fields
+
+
 def population_field(diameters, volume_fractions, weight=None, name=None, reg=1.0):
     """Volume fraction of a population of spheres with several diameters, in fixed proportions.
 
@@ -347,6 +395,8 @@ class SpeciesTomography:
         mean_rays_per_side=2,
         n_samples=None,
         fields=None,
+        state_weights=None,
+        tie=None,
     ):
         self.geometry, self.mesh, self.basis = geometry, mesh, time_basis
         if fields is None:
@@ -364,6 +414,11 @@ class SpeciesTomography:
 
             fields = [species_field(d[a], weight_of(a)) for a in range(d.size)]
         self.fields = list(fields)
+        # state_weights(points, i) -> (n_states, n) weights summing to one, for fields whose chi is a list
+        self.state_weights = state_weights
+        # tie: optional (n_nodes, n_free) matrix; nodal values are tie @ free values (for example
+        # fields constant across each layer of nodes)
+        self.tie = None if tie is None else np.asarray(tie, dtype=float)
         self.spectra = spectra
         self.means = means if means is not None else spectra
         self.psi = time_basis(times)
@@ -418,16 +473,19 @@ class SpeciesTomography:
         return out
 
     def spectral_table(self, M):
-        """(n_fields, n_q, len(M)) kernel M^2 <chi(q M)> per unit field value and length."""
+        """(n_states, n_fields, n_q, len(M)) kernel M^2 <chi(q M)> per unit field value and length."""
         sw = self.spectra
         if sw.q_nodes is not None:
             used = sw.q_weights.max(0) > 1e-6 * sw.q_weights.max()
             wq, qn = sw.q_weights[:, used], sw.q_nodes[used]
         else:
             wq, qn = np.eye(sw.q.size), sw.q
-        T = np.empty((self.n_species, self.n_q, M.size))
+        n_states = max(len(f.chi) if isinstance(f.chi, (list, tuple)) else 1 for f in self.fields)
+        T = np.empty((n_states, self.n_species, self.n_q, M.size))
         for a, f in enumerate(self.fields):
-            T[a] = M[None] ** 2 * (wq @ f.chi(qn[:, None] * M[None]))
+            chis = f.chi if isinstance(f.chi, (list, tuple)) else [f.chi] * n_states
+            for st, chi in enumerate(chis):
+                T[st, a] = M[None] ** 2 * (wq @ chi(qn[:, None] * M[None]))
         return T
 
     def kernels(self, i):
@@ -441,10 +499,16 @@ class SpeciesTomography:
         M = self._magnification(i, pts)
         Mg = np.linspace(M.min(), M.max() + 1e-9, 256)
         T = self.spectral_table(Mg)
-        K = np.empty((self.n_q * self.n_species, pts.shape[0]))
-        for a in range(self.n_species):
-            for b in range(self.n_q):
-                K[b * self.n_species + a] = np.interp(M, Mg, T[a, b]) * w[a]
+        if T.shape[0] > 1:
+            sw = self.state_weights(pts, i)
+        else:
+            sw = np.ones((1, pts.shape[0]))
+        K = np.zeros((self.n_q * self.n_species, pts.shape[0]))
+        for st in range(T.shape[0]):
+            for a in range(self.n_species):
+                for b in range(self.n_q):
+                    K[b * self.n_species + a] += np.interp(M, Mg, T[st, a, b]) * sw[st]
+        K *= np.tile(w, (self.n_q, 1))
         G = self._patch_sum(s.centres.shape[0], pof, pts, K).reshape(-1, self.n_q, self.n_species, self.n_nodes)
         mm = self.means
         pts, w, pof = self._rays(i, mm.centres, mm.size, self.m_mean)
@@ -493,7 +557,9 @@ class SpeciesTomography:
         """
         if self.G is None:
             self.build(verbose)
-        K, A, Nn = self.psi.shape[1], self.n_species, self.n_nodes
+        K, A = self.psi.shape[1], self.n_species
+        T = self.tie if self.tie is not None else np.eye(self.n_nodes)
+        Nn = T.shape[1]
         nu = K * A * Nn
         ym, yP = self.means.mean, self.spectra.P
         em, eP = np.abs(ym).copy(), np.abs(yP).copy()
@@ -501,6 +567,7 @@ class SpeciesTomography:
         xs = np.maximum(self.spectra.mean, 1e-3 * self.spectra.mean.max())
         xmax = xs.max()
         L = (lambda D: (D.T @ D).toarray())(_gradient_operator(self.mesh.node_shape))
+        L = T.T @ L @ T
         R = np.kron(np.eye(K), np.kron(np.diag([f.reg for f in self.fields]), L))
         phi = None
         self.history = []
@@ -517,8 +584,8 @@ class SpeciesTomography:
             H = np.zeros((nu, nu))
             b = np.zeros(nu)
             for i in range(self.geometry.n_proj):
-                Gs = self.G[i].astype(np.float64).reshape(-1, A * Nn) / sP[i].reshape(-1, 1)
-                Gm = self.Gm[i].astype(np.float64).reshape(-1, A * Nn) / sm[i][:, None]
+                Gs = (self.G[i].astype(np.float64) @ T).reshape(-1, A * Nn) / sP[i].reshape(-1, 1)
+                Gm = (self.Gm[i].astype(np.float64) @ T).reshape(-1, A * Nn) / sm[i][:, None]
                 Gi = np.vstack([Gm, Gs])
                 yi = np.concatenate([ym[i] / sm[i], (yP[i] / sP[i]).reshape(-1)])
                 Hi, bi = Gi.T @ Gi, Gi.T @ yi
@@ -532,7 +599,7 @@ class SpeciesTomography:
             scale = np.mean(np.diag(H))
             Hreg = H + reg * scale * R + 1e-9 * scale * np.eye(nu)
             x = np.linalg.solve(Hreg, b)
-            phi = x.reshape(K, A, Nn)
+            phi = x.reshape(K, A, Nn) @ T.T
             em, eP = self.predict(phi)
             zm = (((ym - em) / sm) ** 2).mean()
             zP = (((yP - eP) / sP) ** 2).mean((0, 1))
@@ -547,5 +614,6 @@ class SpeciesTomography:
         # covariance of the nodal values (n_knots * n_fields * n_nodes) under the weights of the last
         # pass, rescaled by its chi^2; the bias of the regularisation is not included
         z_all = (zm * ym.size + (zP * yP.shape[0] * yP.shape[1]).sum()) / (ym.size + yP.size)
-        self.covariance = np.linalg.inv(Hreg) * z_all
+        E = np.kron(np.eye(K * A), T)  # free values -> nodal values
+        self.covariance = E @ (np.linalg.inv(Hreg) * z_all) @ E.T
         return phi

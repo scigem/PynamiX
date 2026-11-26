@@ -89,23 +89,24 @@ mesh holds, and hardly at all by detector noise or the number of radiographs.
 | C3. The fields can evolve within one rotation | Changes over a whole, half and quarter turn resolved with four knots per turn | A dynamic test with an independent check (CT before and after, conservation of each species' total volume) | Synthetic done; experiment needed |
 | C4. Accuracy is set by grains per element, predictably | Mesh and grain-size studies collapse onto a counting estimate with no fitted parameter (large grains); small grains 1.6 times above it | Same static specimen on several meshes against CT | Synthetic done |
 | C5. Insensitive to noise and number of radiographs; needs a pixel reaching q d_small of about 10-14 | Noise, projection, pixel and size-ratio studies | Binned and unbinned versions of the same data | Synthetic done |
-| C6. Predicted uncertainties are usable | Posterior covariance plus counting floor: near-nominal coverage for φ and φ_large, under-coverage for φ_small | Same against CT | Synthetic done, with that caveat |
-| C7. 3D adds to height-only fields | Large-grain fraction error 0.023 (3D) against 0.031-0.041 (layers) on a mostly layered phantom | Static specimen with lateral structure | Synthetic done; a phantom with stronger lateral structure would make the case better |
+| C6. Predicted uncertainties are usable | Posterior covariance plus counting floor: near-nominal coverage for φ and φ_large; conservative for φ_small, whose error inherits the large grains' floor | Same against CT | Synthetic done |
+| C7. 3D adds to height-only fields | Large-grain fraction error 0.027 against 0.109 for side-to-side segregation, 0.024 against 0.050 for lateral segregation, 0.023 against 0.028-0.032 for a mostly layered phantom | Static specimen with lateral structure | Synthetic done |
 
 ## Science still to do
 
 Model and method:
 
-- Small-grain errors above the counting floor and their under-predicted
-  uncertainty: find the source (candidates: the small grains' kernel is
-  more sensitive to the band edge; their interference terms are larger).
-- Interference on the local composition instead of the mean.
+- Ends of the sequence: errors double at the first and last knots.
+- Wide size distributions without known populations: the Porod model
+  needs a finer pixel than tested so far.
 - Wall layer on real packings: the shell field was tested on packings from
-  random sequential addition; real wall layering oscillates over a few
-  diameters.
-- Porod model for wide size distributions, at a pixel fine enough to reach
-  q d_small of about 19.
-- A phantom with stronger lateral structure, for C7.
+  random sequential addition only.
+
+Settled since the first plan: interference in the kernel (needed; the mean
+composition suffices), the small-grain errors (inherited from the large
+grains through the total), size ratio, polydisperse populations, time
+resolution, uncertainty, and the benefit of 3D on phantoms with lateral
+structure.
 
 Experimental pipeline:
 
@@ -157,6 +158,9 @@ and last states have ground truth.
 - Which dynamic experiment.
 - Whether to include the monodisperse case (solid fraction and d32 only) as
   a simpler first demonstration.
+- Whether to report φ and the large-grain fraction as the primary outputs,
+  with species volume fractions derived, since that is how their errors
+  separate.
 - Venue: a granular-physics journal if the dynamic experiment carries
   physics, a measurement journal if the method is the main result.
 
