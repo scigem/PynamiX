@@ -5,3 +5,5 @@ pynamix/defaults/*.npy
 docs/notebooks/.ipynb_checkpoints/
 venv/
 *.pyc
+output/
+__pycache__/

@@ -58,6 +58,16 @@ Notes:
 - Publishing uses PyPI Trusted Publishing (OIDC), which works with PyPI 2FA.
 - PyPI will reject uploads if the version already exists, so the version must be bumped.
 
+## Projection-based DVC and species tomography
+
+`pynamix.pdvc` fits a space-time displacement field directly to a sequence of
+radiographs taken while the gantry turns (projection-based digital volume
+correlation). `pynamix.spectral.tomography` reconstructs species volume
+fractions in 3D and in time from the spectra of detector patches over the same
+sequence. The projector and solver need PyTorch, installed with
+`pip install "pynamix[pdvc]"`. See `docs/pdvc/README.md`, the research note
+`docs/pdvc/research-note.md` and the scripts in `examples/pdvc/`.
+
 ## Examples
 Try out the included Jupyter notebook to see how to use the package.
 

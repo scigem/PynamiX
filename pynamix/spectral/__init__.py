@@ -39,7 +39,7 @@ normalisation
 See :mod:`pynamix.spectral.compat` for the bridge between the two.
 """
 
-from . import calibrate, closure, compat, detector, invert, psd, uncertainty, units, velocity
+from . import calibrate, closure, compat, detector, invert, psd, tomography, uncertainty, units, velocity
 from .calibrate import Calibration, fit_calibration, infer_H
 from .invert import (
     concentration_from_porod,
@@ -74,6 +74,7 @@ __all__ = [
     "detector",
     "invert",
     "psd",
+    "tomography",
     "uncertainty",
     "units",
     "velocity",
