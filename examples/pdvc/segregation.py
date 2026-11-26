@@ -60,6 +60,9 @@ def parse(argv=None):
     ap.add_argument("--knots", type=int, default=4)
     ap.add_argument("--patch", type=int, default=48, help="spectral patch width (pixels)")
     ap.add_argument("--mean-patch", type=int, default=16, help="patch width for the mean rows (pixels)")
+    ap.add_argument("--stride", type=int, default=None, help="spectral patch stride (default: half the patch)")
+    ap.add_argument("--alpha", type=float, default=1.0, help="Tukey taper fraction of the spectral window (1: Hann)")
+    ap.add_argument("--tapers", type=int, default=0, help="K > 0: mean over K x K sine tapers instead")
     ap.add_argument("--qd-min", type=float, default=8.0, help="lower band edge, as q d_small in the object")
     ap.add_argument("--reg", type=float, default=1e-3)
     ap.add_argument(
@@ -487,7 +490,9 @@ def run(args):
         X,
         pitch=args.pixel,
         size=args.patch,
-        stride=args.patch // 2,
+        stride=args.stride or args.patch // 2,
+        alpha=args.alpha,
+        tapers=args.tapers,
         q_band=(q_min, 0.6 * np.pi / args.pixel),
         noise_var=args.noise**2,
         pixel_mtf=2,

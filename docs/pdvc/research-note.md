@@ -257,6 +257,17 @@ mostly layered default phantom the lateral signal in the realised fields
 (0.008 in φ_large) is no larger than the reconstruction error, so little
 can be gained there.
 
+Spectral window. The Hann window uses an effective 14% of each patch. A
+Tukey window with taper fraction 0.5 lowers the species errors by 10-20%
+(on four seeds and meshes of 1 to 4 elements; the large-grain fraction error
+on the default mesh falls from 0.023-0.028 to 0.019-0.022), which is worth
+about 1.4 times as many grains per element. Narrower tapers (0.25) and sine
+multitapers make it worse: they leak low-q power or blur the variation
+across annuli that separates the species. With the Tukey window the error
+falls below the counting estimate, which is therefore the fluctuation of the
+realised field, not a bound on the error. The studies above use the Hann
+window.
+
 Ends of the sequence. The first and last time knots are constrained by
 radiographs on one side only, and the errors there are about twice those
 in the middle of the turn (0.04 against 0.02 in the large-grain fraction).

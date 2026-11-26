@@ -1,0 +1,146 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{xr-hyper}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\externaldocument[M-]{main}
+\graphicspath{{figures/}}
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\theequation}{S\arabic{equation}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\x}{\bm{x}}
+
+\title{Supplement: Species volume fractions in granular mixtures from rotating radiography}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Annulus weights}\label{sec:window}
+
+The periodogram of a windowed patch has expectation
+$\mathbb{E}\hat P(\bm q)=\sum_{\bm q'}|\hat W(\bm q-\bm q')|^2\,\mathbb{E}P(|\bm q'|)/\sum|\hat W|^2$,
+the true spectrum convolved with the power spectrum of the window. For an
+isotropic $\mathbb{E}P$ the mean over the bins of annulus $b$ is a weighted
+sum of $\mathbb{E}P$ at radial nodes $q_r$,
+\begin{equation}
+\mathbb{E}\hat P_b=\sum_r\omega_{br}\,\mathbb{E}P(q_r).
+\end{equation}
+We compute $|\hat W|^2$ by zero-padding the window to four times the patch
+width, keep it within six bins of the origin, and for every bin of the
+annulus distribute the weight $|\hat W(\bm q-\bm q')|^2$ over the radial
+nodes by linear interpolation in $|\bm q'|$. The nodes are spaced at a
+quarter of the bin width. The weights depend only on the window and the
+patch size and are computed once.
+
+Without these weights, the model at the mean wavenumber of each annulus
+underestimates the measured annulus values near the zeros of the form
+factors by up to about a third in the default band, because the measured
+values cannot reach the zeros. With the weights, the measured and modelled
+spectra of a uniform packing agree to within 3\% in the band.
+
+The synthetic radiographs average $2\times2$ point samples per pixel instead
+of integrating over the pixel. The transfer function of that average,
+$\sin(qp/2)/[2\sin(qp/4)]$ per axis, differs from the sinc of a square
+aperture by up to 16\% in power at $0.6$ of the Nyquist wavenumber, and the
+synthetic spectra are divided by it instead.
+
+\section{Windows}\label{sec:windows}
+
+Table~\ref{tab:windows} compares spectral windows on the default data,
+for meshes of 2 and 4 elements across the specimen (about 630 and 80 large
+grains per element). The last column is the mean reduced $\chi^2$ of the
+annuli on the 2-element mesh after the variance components are fitted; a
+value close to one means the periodogram scatter alone accounts for the
+residuals. Patch means, and hence $\phi$, do not depend on the window.
+
+\begin{table}[h]
+\centering
+\caption{Errors in $c$ and $\phi_{\rm large}$ for different spectral windows
+(seed 0).}
+\label{tab:windows}
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{2}{c}{2 elements} & \multicolumn{2}{c}{4 elements} & \\
+Window & $c$ & $\phi_{\rm large}$ & $c$ & $\phi_{\rm large}$ & $\chi^2$ \\
+\midrule
+Hann & 0.023 & 0.0074 & 0.051 & 0.0179 & 1.55 \\
+Tukey, taper fraction 0.5 & 0.019 & 0.0063 & 0.046 & 0.0161 & 1.65 \\
+Tukey, taper fraction 0.25 & 0.029 & 0.0084 & 0.055 & 0.0177 & 1.67 \\
+Sine multitaper, $2\times2$ & 0.028 & 0.0092 & 0.052 & 0.0179 & 1.13 \\
+Sine multitaper, $3\times3$ & 0.041 & 0.0126 & 0.064 & 0.0221 & 1.03 \\
+Hann, stride 12 & 0.023 & 0.0064 & 0.052 & 0.0168 & 1.53 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Error model alternatives}
+
+Two simpler weightings were tried before the one in the main text. Giving
+each patch mean a fixed relative error weights the patches at the edge of
+the specimen most heavily, where the chords are short and the relative
+grain-count fluctuation is largest. This was not isolated in a controlled
+comparison, because the same runs also contained the wall layer of
+Section~\ref{M-sec:wall}. Leaving the detector noise out of the variance of
+an annulus gives annuli whose signal is comparable to the noise a variance
+near zero once the noise is subtracted. With the self-term kernel and a
+noise of 3 voxels of path length per pixel, the error in $c$ was above 1
+without the noise term and below 0.1 with it (errors at the mesh nodes).
+
+\section{Reference fields}\label{sec:reference}
+
+The realised field of species $a$ is the least-squares fit of
+Eq.~\eqref{M-eq:fields} to the grains,
+$\min\int(w_a\tilde\phi_a-I_a)^2\dd V$, with $I_a$ the indicator of
+species $a$. Each grain is counted as its volume at its centre, so the
+right-hand side is $\sum_j v_a w_a(\x_j)\bm N(\x_j)$ over the grains $j$ of
+species $a$ in each packing, weighted by the time basis at the packing's
+time. The mass matrix is integrated on a grid of spacing 3 voxels. A
+gradient penalty of $10^{-4}$ of the mean diagonal keeps nodes whose support
+holds little material finite.
+
+The reference must be fitted on a basis shared by the reconstructions that
+are compared with it. A reconstruction with three time knots, compared with
+a reference fitted with three knots, appears accurate for a change over a
+quarter turn, because neither can represent the change; against a reference
+on 13 knots its error is 0.041 (Table~\ref{M-tab:time}). Likewise, a mesh
+with one element across the specimen is bilinear across it and represents
+any linear lateral gradient, so the layer-wise fields of
+Table~\ref{M-tab:layers} tie all nodes of a layer together.
+
+\section{Counting fluctuation of a projected field}\label{sec:floor}
+
+Let $\tilde\phi_a(\x)=\bm N(\x)^\top\mathsf M^{-1}\bm b$ with
+$\mathsf M=\int\bm N\bm N^\top\dd V$ over the specimen and
+$\bm b=\sum_jv_a\bm N(\x_j)$ over the grains $j$ of species $a$. For grain
+centres forming a stationary point process of density $\rho_a$ with
+structure factor $S_{aa}$, and shape functions that vary slowly on the scale
+of the grain spacing,
+$\operatorname{cov}\bm b=\rho_av_a^2S_{aa}(0)\,\mathsf M$. Hence
+\begin{equation}
+\operatorname{var}\tilde\phi_a(\x)=\rho_av_a^2S_{aa}(0)\,\bm N^\top\mathsf M^{-1}\bm N
+=S_{aa}(0)\,\phi_av_a\,\bm N^\top\mathsf M^{-1}\bm N,
+\end{equation}
+which is Eq.~\eqref{M-eq:floor}. For the solid fraction the variance is
+$\sum_{ab}S_{ab}(0)\sqrt{\phi_av_a\phi_bv_b}\,\bm N^\top\mathsf M^{-1}\bm N$.
+
+\section{Code checks}
+
+The kernel of the patch means agrees with an independent ray-marching
+projector of a smooth field to 2\% in the median over patches. The exact
+projector of spheres reproduces the chord through the centre of a sphere of
+diameter 10 voxels to 0.1 voxels and its volume to 1\%. In the dilute limit
+the interference kernel of Eq.~\eqref{M-eq:chia} reduces to the self term
+to 1\%, and the self term averaged over many lobes of the form factor
+matches the Porod limit to 2\%. These checks are part of the test suite of
+the code.
+
+\end{document}

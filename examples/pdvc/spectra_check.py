@@ -64,6 +64,7 @@ def main():
         ratios[name] = spec.P / P
         print(name, "median ratio per annulus:", np.round(np.median(ratios[name], (0, 1)), 3))
 
+    np.savez(a.out.with_suffix(".npz"), qd=qd, **{k.replace(" ", "_"): v for k, v in ratios.items()})
     import matplotlib
 
     matplotlib.use("Agg")

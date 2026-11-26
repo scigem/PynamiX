@@ -74,7 +74,17 @@ class PatchSpectra:
 
 
 def patch_spectra(
-    X, pitch=1.0, size=48, stride=None, q_band=None, noise_var=0.0, pixel_mtf="area", alpha=1.0, upsample=4, reach=6
+    X,
+    pitch=1.0,
+    size=48,
+    stride=None,
+    q_band=None,
+    noise_var=0.0,
+    pixel_mtf="area",
+    alpha=1.0,
+    upsample=4,
+    reach=6,
+    tapers=0,
 ):
     """Tile projections ``X`` (n_proj, nr, nc) into patches and take their spectra.
 
@@ -85,9 +95,12 @@ def patch_spectra(
     "area" for a detector that integrates over square pixels, an integer s
     for pixels that average s x s point samples (a supersampled simulation),
     or None. ``alpha`` is the Tukey taper fraction; the default 1 (Hann)
-    keeps leakage from the strong low-q spectrum out of the band. The window
-    spectrum is tabulated at ``upsample`` times the bin spacing out to
-    ``reach`` bins.
+    keeps leakage from the strong low-q spectrum out of the band. With
+    ``tapers`` = K > 0 the periodogram is instead the mean over K x K
+    separable sine tapers (a multitaper estimate), which uses the whole patch
+    and lowers the variance by about K^2; its annulus values then count as
+    K^2 times as many independent bins. The window spectrum is tabulated at
+    ``upsample`` times the bin spacing out to ``reach`` bins.
     """
     X = np.asarray(X, dtype=np.float64)
     n_proj, nr, nc = X.shape
@@ -98,7 +111,12 @@ def patch_spectra(
     R0, C0 = R0.ravel(), C0.ravel()
     centres = np.stack([R0 + (size - 1) / 2 - (nr - 1) / 2, C0 + (size - 1) / 2 - (nc - 1) / 2], 1)
 
-    W = np.outer(taper(size, "tukey", alpha), taper(size, "tukey", alpha))
+    if tapers > 0:
+        n_ = np.arange(size)
+        sines = [np.sqrt(2 / (size + 1)) * np.sin(np.pi * k * (n_ + 1) / (size + 1)) for k in range(1, tapers + 1)]
+        Ws = [np.outer(a_, b_) for a_ in sines for b_ in sines]
+    else:
+        Ws = [np.outer(taper(size, "tukey", alpha), taper(size, "tukey", alpha))]
     q1 = 2 * np.pi * np.fft.fftfreq(size, d=pitch)
     qmag = np.sqrt(q1[:, None] ** 2 + q1[None, :] ** 2)
     if pixel_mtf == "area":
@@ -125,22 +143,27 @@ def patch_spectra(
     for j, (r0, c0) in enumerate(zip(R0, C0)):
         x = X[:, r0 : r0 + size, c0 : c0 + size]
         mean[:, j] = x.mean((1, 2))
-        mw = (W * x).sum((1, 2)) / W.sum()
-        f = np.fft.fft2(W * (x - mw[:, None, None]))
-        p2 = pitch**2 * np.abs(f) ** 2 / (W**2).sum() - pitch**2 * noise_var
-        p2 = p2 / m2
+        p2 = 0.0
+        for W in Ws:
+            # the window-weighted mean is removed; a taper with zero sum takes the plain mean
+            mw = (W * x).sum((1, 2)) / W.sum() if abs(W.sum()) > 1e-9 * np.abs(W).sum() else mean[:, j]
+            f = np.fft.fft2(W * (x - mw[:, None, None]))
+            p2 = p2 + pitch**2 * np.abs(f) ** 2 / (W**2).sum()
+        p2 = (p2 / len(Ws) - pitch**2 * noise_var) / m2
         for k, b in enumerate(bins):
             P[:, j, k] = p2[:, idx == b].mean(-1)
-    q_nodes, q_weights = _annulus_weights(W, pitch, qmag, idx, bins, dq, upsample, reach)
+    q_nodes, q_weights = _annulus_weights(Ws, pitch, qmag, idx, bins, dq, upsample, reach)
     # noise PSD left in each annulus after the MTF division, before it was subtracted
     noise = np.array([(pitch**2 * noise_var / m2[idx == b]).mean() for b in bins])
-    return PatchSpectra(centres, size, pitch, qmean[bins], counts[bins], P, mean, q_nodes, q_weights, noise)
+    n_eff = counts[bins] * (len(Ws) if tapers > 0 else 1)
+    return PatchSpectra(centres, size, pitch, qmean[bins], n_eff, P, mean, q_nodes, q_weights, noise)
 
 
-def _annulus_weights(W, pitch, qmag, idx, bins, dq, upsample, reach):
-    """Radial weights mapping an isotropic spectrum to expected annulus means."""
+def _annulus_weights(Ws, pitch, qmag, idx, bins, dq, upsample, reach):
+    """Radial weights mapping an isotropic spectrum to expected annulus means, for one or several windows."""
+    W = Ws[0]
     n = W.shape[0] * upsample
-    K2 = np.abs(np.fft.fft2(W, s=(n, n))) ** 2
+    K2 = sum(np.abs(np.fft.fft2(w_, s=(n, n))) ** 2 / (w_**2).sum() for w_ in Ws)
     k1 = 2 * np.pi * np.fft.fftfreq(n, d=pitch)
     KX, KY = np.meshgrid(k1, k1, indexing="ij")
     near = (np.abs(KX) <= reach * dq) & (np.abs(KY) <= reach * dq)

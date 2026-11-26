@@ -5,9 +5,11 @@
 \usepackage{booktabs}
 \usepackage{microtype}
 \usepackage{xcolor}
+\usepackage{xr-hyper}
 \usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\externaldocument[S-]{supplement}
 \hypersetup{pdftitle={Species volume fractions in granular mixtures from rotating radiography},pdfauthor={Benjy Marks}}
-\graphicspath{{../figures/}}
+\graphicspath{{figures/}}
 \newcommand{\todo}[1]{\textcolor{red}{[#1]}}
 \newcommand{\plan}[1]{\textcolor{blue!60!black}{\textit{Plan:} #1}}
 \newcommand{\dd}{\mathrm{d}}
@@ -22,69 +24,64 @@
 \maketitle
 
 \begin{abstract}
-The solid fraction and the volume fraction of each grain size in a granular
-mixture change during flow, through dilation and segregation, but X-ray
-tomography resolves them only when the flow is stopped, and radiography
-averages them along the beam. We show that the power spectrum of a small
-patch of a radiograph of a dense packing is, in expectation, a line integral
-of a local spectral density that is linear in the species volume fractions,
-once grain interference is included through the partial structure factors
-of the mixture. Radiographs taken from many directions by a rotating
-cone-beam scanner therefore determine three-dimensional, time-dependent
-fields of species volume fraction through a linear inverse problem, without
-resolving grains or a reference scan. We test the method on synthetic
-radiographs of evolving bidisperse sphere packings with exact cone-beam
-projections. With about 600 large grains per element of the reconstruction
-mesh, the solid fraction is recovered to 0.005 and the large-grain fraction
-of the solid to 0.023 (root mean square over the specimen and the
-sequence). The error of the large-grain field equals, without a fitted
-parameter, the counting fluctuation of the grains in an element, which
-gives the element size needed for a given accuracy. The errors are
-insensitive to detector noise up to several per cent of the path length and
-to the number of radiographs per turn, follow changes within a quarter turn,
-and are up to four times smaller than those of fields constrained to vary
-with height only. \todo{experimental validation}
+The solid fraction and the volume fraction of each grain size in a flowing
+granular mixture change through dilation and segregation. X-ray tomography
+resolves them only when the flow is stopped, and radiography averages them
+along the beam. Here, we show that the power spectrum of a small patch of a
+radiograph of a dense packing is, in expectation, a line integral of a local
+spectral density that is linear in the species volume fractions, when grain
+interference is described by partial structure factors at the mean
+composition. Radiographs taken from many directions by a rotating cone-beam
+scanner then determine three-dimensional, time-dependent fields of species
+volume fraction by linear least squares, without resolving grains and
+without a reference scan. We test the method on exact synthetic radiographs
+of evolving bidisperse sphere packings. With about 600 large grains per
+element of the reconstruction mesh, the solid fraction is recovered to 0.005
+and the large-grain fraction of the solid to 0.023, as root-mean-square
+errors over the specimen and the sequence. The error of the large-grain
+field scales with the counting fluctuation of the grains in an element and,
+with a Hann window, lies within 13\% of it with no fitted parameter; a
+Tukey window lowers it by a further 10--20\%. It changes little with detector noise up to 4\% of the
+path length or with the number of radiographs per turn, and changes within
+a quarter turn are followed. Fields constrained to vary with height only
+have errors up to four times larger. \todo{experimental validation}
 \end{abstract}
 
 % ---------------------------------------------------------------------------
 \section{Introduction}
 
 Segregation, dilation and compaction in flowing granular mixtures are
-three-dimensional and change on the time scale of the flow. Their
-measurement inside an opaque material has relied on X-ray tomography, which
-needs the specimen to be still for the duration of a scan, so that flows are
-stopped and restarted between scans \todo{cite: tomography of segregation or
-dilation in stopped flows}. Radiography is fast but integrates through the
-depth of the specimen: a layer of large grains in front of a layer of small
-grains gives the same mean attenuation as a uniform mixture.
+three-dimensional and change on the time scale of the flow. X-ray tomography
+measures them inside an opaque specimen, but a scan requires the specimen to
+be still, so flows have been stopped and restarted between scans
+\todo{cite: tomography of segregation or dilation in stopped flows}.
+Radiography is fast but integrates through the depth: a layer of large
+grains in front of a layer of small grains attenuates as much as a uniform
+mixture of the same composition.
 
-Two families of methods extract more than the mean from radiographs. Image
-correlation methods follow the texture of the grains. Projection-based
-digital volume correlation fits a space-time displacement field directly to
-a sequence of radiographs taken while a scanner rotates, against a reference
-volume from a full scan \todo{cite: projection-based DVC, Roux, Hild and
-co-workers}. It requires the texture to persist, which it does not once
-grains rearrange, and it measures displacement, not composition. Spectral
-methods instead treat a radiograph of a dense packing as a random field. The
-power spectrum of the projected path length through solid depends on the
-grain size distribution, the solid fraction and the arrangement of the
-grains, and its high-wavenumber part gives the solid fraction, the specific
-surface and the volume fraction of each species without calibration
-\todo{cite: spectral analysis of radiographs of granular media; pynamix}.
-These estimates are averages along the beam.
+Two families of methods extract more than the mean attenuation from
+radiographs. Projection-based digital volume correlation fits a space-time
+displacement field directly to radiographs taken while a scanner rotates,
+using a reference volume from a full scan \todo{cite: projection-based DVC,
+Roux, Hild and co-workers}. It follows the texture of the grains, which
+persists only while the grains do not rearrange, and it measures
+displacement. Spectral methods treat a radiograph of a dense packing as a
+random field. The power spectrum of the projected path length through solid
+depends on the grain sizes, the solid fraction and the arrangement, and its
+high-wavenumber part gives the solid fraction, the specific surface and the
+species volume fractions without calibration \todo{cite: spectral analysis
+of radiographs of granular media; pynamix}. These spectral estimates are
+averages along the beam.
 
-Here we combine the second idea with the geometry of the first. A scanner
-that rotates around a specimen, such as a gantry scanner, records each
-point of the specimen from many directions while the material evolves. We
-show that the spectrum of a detector patch is the sum of contributions from
-every depth its rays cross, each linear in the local species volume
-fractions, and use this to reconstruct the fields in three dimensions and in
-time by linear least squares. Section~\ref{sec:method} gives the forward
-model, the error model and the reconstruction.
-Section~\ref{sec:synthetic} describes synthetic tests with exact projections
-of evolving packings, and Section~\ref{sec:results} reports how the accuracy
-depends on the number of grains per element, the detector, the size ratio
-and polydispersity, the time resolution and the container wall.
+Here, we combine the spectral estimates with the geometry of a rotating
+scanner, which records each point of the specimen from many directions while
+the material evolves. Section~\ref{sec:method} derives the expected spectrum
+of a detector patch as a sum over the depths its rays cross, defines the
+space-time fields and the linear problem, and gives the error model.
+Section~\ref{sec:synthetic} describes synthetic radiographs of evolving
+packings. Section~\ref{sec:results} reports the accuracy and how it depends
+on the number of grains per element, the detector, the size distribution,
+the rate of change, the lateral structure and the container wall.
 Section~\ref{sec:experiments} is reserved for experiments.
 
 % ---------------------------------------------------------------------------
@@ -92,87 +89,87 @@ Section~\ref{sec:experiments} is reserved for experiments.
 
 \subsection{Spectral density of a projected packing}
 
-Let $I(\x)$ be the indicator of solid in a packing of spheres of species
-$a$, with diameters $d_a$, volumes $v_a=\pi d_a^3/6$, number densities
-$\rho_a$ and volume fractions $\phi_a=\rho_a v_a$. After flat-field
+We consider spheres of species $a$ with diameters $d_a$, volumes
+$v_a=\pi d_a^3/6$, number densities $\rho_a$ and volume fractions
+$\phi_a=\rho_a v_a$. Let $I(\x)$ be the indicator of solid. After flat-field
 correction and linearisation, a radiograph gives the path length through
 solid along each ray, $X(\bm\xi)=\int I\,\dd s$, at detector position
 $\bm\xi$.
 
-The three-dimensional spectral density of $I$, per unit volume and away
-from zero wavenumber, is
+The three-dimensional spectral density of $I$, per unit volume and away from
+zero wavenumber, is
 \begin{equation}
 \chi(k)=\sum_{a,b}\sqrt{\rho_a\rho_b}\,v_a v_b\,F(k d_a/2)\,F(k d_b/2)\,S_{ab}(k),
 \label{eq:chi}
 \end{equation}
 where $F(u)=3(\sin u-u\cos u)/u^3$ is the amplitude form factor of a sphere
 and $S_{ab}$ are the Ashcroft--Langreth partial structure factors of the
-mixture \todo{cite: partial structure factors of mixtures}. With
+mixture \todo{cite: partial structure factors of mixtures}. For
 $S_{ab}=\delta_{ab}$, Eq.~\eqref{eq:chi} reduces to the self term
-$\sum_a\phi_a v_a F^2(k d_a/2)$, which describes grains placed independently.
+$\sum_a\phi_a v_aF^2(kd_a/2)$ of independently placed grains.
 
-In a cone beam a feature at a point $\x$ appears on the detector magnified
-by $M(\x)$, the ratio of the source--detector distance to the distance from
-the source to $\x$ along the detector normal. Consider a slab of the
-specimen normal to the beam, of thickness $\dd s$ larger than the range of
-the interference terms but small compared with the specimen. Its projection
-has a two-dimensional spectral density equal to $\dd s$ times $\chi$
-evaluated at the in-plane wavevector, by the projection-slice theorem.
-Mapped to the detector, where an object wavenumber $k$ appears at $q=k/M$
-and the area scales by $M^2$, a slab contributes $M^2\chi(qM)\,\dd s$.
-Slabs separated by more than the interference range are uncorrelated, so
-the expected spectral density of $X$ near a detector point is the integral
-along its ray,
+In a cone beam a feature at $\x$ appears on the detector magnified by
+$M(\x)$, the source--detector distance divided by the distance from the
+source to $\x$ along the detector normal. A slab of the specimen normal to
+the beam, thicker than the range of the interference terms, projects to a
+two-dimensional spectral density equal to its thickness $\dd s$ times $\chi$
+at the in-plane wavevector, by the projection-slice theorem. On the detector
+an object wavenumber $k$ appears at $q=k/M$ and areas scale by $M^2$, so the
+slab contributes $M^2\chi(qM)\,\dd s$. Slabs further apart than the
+interference range are uncorrelated, and the expected spectral density of
+$X$ near a detector point is the integral along its ray,
 \begin{equation}
 \mathbb{E}\,P(q)=\int M(\x)^2\,\chi\bigl(qM(\x);\x\bigr)\,\dd s,
 \label{eq:additive}
 \end{equation}
-in which $\chi$ depends on position through the local composition. The
-expected mean path length is $\mathbb{E}\,X=\int\phi\,\dd s$, with
-$\phi=\sum_a\phi_a$.
+where $\chi$ depends on position through the local composition. The expected
+mean path length is $\mathbb{E}\,X=\int\phi\,\dd s$, with $\phi=\sum_a\phi_a$.
+For a parallel beam ($M=1$) through a uniform packing of thickness $L$,
+Eq.~\eqref{eq:additive} gives $P=L\chi(q)$ and the ratio $P/\bar X=\chi/\phi$
+is independent of $L$, which is the single-view estimate
+\todo{cite: pynamix.spectral thick-sample limit}.
 
-Equation~\eqref{eq:chi} is quadratic in the number densities. We write it as
+Equation~\eqref{eq:chi} is quadratic in the number densities. Writing it as
 $\chi=\sum_a\phi_a\chi_a$ with
 \begin{equation}
-\chi_a(k)=F(kd_a/2)\sum_b\sqrt{\rho_b/\rho_a}\,v_b\,F(kd_b/2)\,S_{ab}(k),
+\chi_a(k)=F(kd_a/2)\sum_b\sqrt{\rho_b/\rho_a}\,v_b\,F(kd_b/2)\,S_{ab}(k)
 \label{eq:chia}
 \end{equation}
-and evaluate $\chi_a$ at the mean composition of the specimen, using
-Percus--Yevick partial structure factors \todo{cite: Percus--Yevick
-closure for hard-sphere mixtures}. The spectral density is then linear in
-the fields $\phi_a(\x)$. Section~\ref{sec:local} tests the effect of
-evaluating $\chi_a$ at the local composition instead.
+and holding the ratios $\rho_b/\rho_a$ and the structure factors at the mean
+composition makes the spectral density linear in the fields $\phi_a$. We
+evaluate $S_{ab}$ with the Percus--Yevick closure for hard-sphere mixtures
+\todo{cite: Percus--Yevick closure for mixtures}. The approximation is
+tested in Sections~\ref{sec:forward} and~\ref{sec:local}. Near zero
+wavenumber Eq.~\eqref{eq:additive} also contains the variation of $\phi$
+across the patch, which is why only a band of high wavenumbers is used.
 
 \subsection{Patch spectra}
 
-Each radiograph is cut into square patches of $m$ pixels of pitch $p$. For
-a patch we compute the windowed periodogram
-$\hat P(\q)=p^2|\mathcal{F}[W(X-\bar X_W)]|^2/\sum W^2$, with $W$ a Hann window
-and $\bar X_W$ the window-weighted mean, divide out the transfer function of
-the pixel aperture, and average over annuli of width $2\pi/(mp)$. The
-normalisation gives the spectral density in absolute units
-\todo{cite: pynamix.spectral normalisation}. White detector noise of
-variance $\sigma_n^2$ in $X$ adds $p^2\sigma_n^2$, which is subtracted.
+Each radiograph is divided into square patches of $m$ pixels of pitch $p$.
+For a patch, the periodogram
+$\hat P(\q)=p^2\,|\mathcal F[W(X-\bar X_W)]|^2/\sum W^2$, with $W$ a Hann
+window and $\bar X_W$ the window-weighted mean, estimates the spectral
+density in absolute units \todo{cite: pynamix.spectral normalisation}. The
+transfer function of the pixel aperture is divided out, white detector noise
+of variance $\sigma_n^2$ contributes $p^2\sigma_n^2$, which is subtracted,
+and $\hat P$ is averaged over annuli of width $2\pi/(mp)$.
 
-The expectation of an annulus value is not $\mathbb{E}P$ at its mean
-wavenumber. It averages $\mathbb{E}P$ over the annulus and over the
-spectrum of the window, which spreads power across a few wavenumber bins.
-Near the zeros of $F$ this averaging fills in the zeros, and leaving it out
-overestimates the misfit by up to a third at the annuli used here. We therefore write the
-expected value of annulus $b$ as $\sum_r\omega_{br}\,\mathbb{E}P(q_r)$ on a
-fine grid of $q_r$, with weights $\omega_{br}$ computed once from the
-window.
+An annulus value averages $\mathbb{E}P$ over the annulus and over the
+spectrum of the window, which spreads power over a few wavenumber bins and
+fills in the zeros of $F$. We write its expectation as
+$\sum_r\omega_{br}\,\mathbb{E}P(q_r)$ on a fine grid of $q_r$, with weights
+$\omega_{br}$ computed once from the window (Supplement
+Section~\ref{S-sec:window}).
 
-Within a patch, Eq.~\eqref{eq:additive} is averaged over a grid of rays.
-The data for each radiograph are the patch means of $X$, from small patches,
-and the annulus values in a band of wavenumbers, from larger patches.
-Small patches resolve the solid fraction better, while the spectra need
-patches that hold many grains.
+Within a patch, Eq.~\eqref{eq:additive} is averaged over a grid of rays. The
+data for each radiograph are the patch means of $X$, from patches of 16
+pixels, and annulus values in a band of high wavenumbers, from patches of 48
+pixels that each contain many grains.
 
-\subsection{Space-time fields and the linear problem}
+\subsection{Space-time fields}
 
-The fields are written on a regular mesh of trilinear hexahedral elements
-times piecewise-linear functions of time,
+The fields are written on a regular mesh of trilinear hexahedral elements and
+piecewise-linear functions of time,
 \begin{equation}
 \phi_a(\x,\tau)=w_a(\x)\sum_k\sum_n\psi_k(\tau)\,N_n(\x)\,c_{akn},
 \label{eq:fields}
@@ -180,198 +177,185 @@ times piecewise-linear functions of time,
 where $\tau$ is the time of a radiograph within the sequence. The factor
 $w_a$ describes the specimen surface. Grains whose centres fill a cylinder
 straddle its surface, and the expected volume fraction of species $a$ falls
-from its bulk value to zero over one grain radius on either side; for a
-planar face at signed distance $s$ inside, $w_a=\tfrac12+\tfrac34 t-\tfrac14 t^3$
-with $t=s/(d_a/2)$ clipped to $[-1,1]$, the fraction of a sphere of
-diameter $d_a$ centred at the point that lies inside. The product over the
-side and the two ends is used for a cylinder.
+from its bulk value to zero over one grain radius each side of the surface.
+For a planar face at signed distance $s$ inside, $w_a$ is the fraction of a
+sphere of diameter $d_a$ centred at the point that lies inside,
+$w_a=\tfrac12+\tfrac34t-\tfrac14t^3$ with $t=s/(d_a/2)$ clipped to
+$[-1,1]$; a cylinder takes the product over its side and two ends.
 
-Substituting Eq.~\eqref{eq:fields} into Eq.~\eqref{eq:additive} and into the
-mean gives the data as $G\bm c$, with $G$ assembled by sampling each patch's
-rays. The kernel depends on position only through the magnification, so it
-is tabulated in $M$ for each annulus and interpolated. The coefficients
-minimise
+\subsection{Linear problem}
+
+Substituting Eq.~\eqref{eq:fields} into Eq.~\eqref{eq:additive} and into
+$\mathbb{E}X$ gives the data as $G\bm c$, where $G$ is assembled by sampling
+each patch's rays. The kernel depends on position only through $M$ and is
+tabulated in $M$ for each annulus. The coefficients minimise
 \begin{equation}
-(\bm d-G\bm c)^\top\Sigma^{-1}(\bm d-G\bm c)+\lambda\,\bar h\,\bm c^\top L\bm c,
+(\bm d-G\bm c)^\top\Sigma^{-1}(\bm d-G\bm c)+\lambda\,\bar h\,\bm c^\top L\,\bm c,
 \label{eq:ls}
 \end{equation}
 where $L$ is a discrete gradient penalty on the nodal values of each field,
 $\bar h$ is the mean diagonal of $G^\top\Sigma^{-1}G$ and $\lambda=10^{-3}$.
-The solid fraction, the large-grain fraction of the solid
+The problem is solved first with the self term; the mean volume fractions
+of that solution fix the kernels of Eq.~\eqref{eq:chia}, and the problem is
+solved again. The solid fraction, the large-grain fraction of the solid
 $c=\phi_{\rm large}/\phi$ and the Sauter mean diameter
-$d_{32}=\phi/\sum_a\phi_a/d_a$ follow from the fields.
-
-The kernels of Eq.~\eqref{eq:chia} need the mean composition. The problem
-is solved first with the self term, the mean volume fractions are taken from
-that solution, and it is solved again with the interference terms.
+$d_{32}=\phi/\sum_a(\phi_a/d_a)$ follow from the fields.
 
 \subsection{Error model}
 
-The weights $\Sigma$ have two sources. An annulus value is the mean of $n_b$
-periodogram bins, each exponentially distributed about its expectation, so
-its variance is $(\mathbb{E}P+N_b)^2/n_b$, with $N_b$ the subtracted noise
-spectrum. In addition, the number of grains under a patch fluctuates. A
-patch mean then has a variance proportional to the number of grains along
-its rays, and hence to $\bar X$; an annulus value has a relative variance
-proportional to $1/\bar X$. The two grain-count terms have unknown scales.
-They are set by iterating the solution four times, each time taking
-$\mathbb{E}P$ from the previous solution and rescaling each term so that the
-reduced $\chi^2$ of the patch means and of each annulus is one. Weighting
-by a relative error instead, or leaving out the noise term, gives large
-weights to patches near the edge of the specimen and to annuli whose signal
-has been removed with the noise, and the solution fails there.
+An annulus value is the mean of $n_b$ periodogram bins, each exponentially
+distributed about its expectation, so its variance is
+$(\mathbb{E}P+N_b)^2/n_b$, with $N_b$ the noise spectrum that was
+subtracted. The number of grains under a patch also fluctuates. The variance
+of a patch mean from this source is proportional to the number of grains
+along its rays, hence to $\bar X$, and the relative variance of an annulus
+value is proportional to $1/\bar X$. These two grain-count terms have scales
+that are not known in advance. We solve Eq.~\eqref{eq:ls} four times,
+taking $\mathbb{E}P$ from the previous solution and rescaling each
+grain-count term so that the reduced $\chi^2$ of the patch means and of each
+annulus is one. The posterior covariance of $\bm c$ is the inverse of the
+regularised normal matrix at the last solution.
 
 % ---------------------------------------------------------------------------
 \section{Synthetic tests}\label{sec:synthetic}
 
-\subsection{Packings and radiographs}
+The specimen is a cylinder of radius and half-height 128 voxels holding
+spheres of diameters 5 and 10 voxels at a mean solid fraction of 0.30, about
+34\,000 grains. Target fields prescribe the solid fraction and the
+large-grain fraction of the solid at each point and time. In the default
+case the solid fraction decreases with height and a dilated column grows off
+the axis, and the initially mixed packing segregates with large grains
+moving up and outwards. Packings are built by random sequential addition,
+with candidate positions accepted with a probability proportional to the
+target volume fraction of their species, and are cut from a larger cylinder
+so that the specimen has no wall layer (the wall is treated in
+Section~\ref{sec:wall}). Twelve packings, drawn from the targets at
+successive times, stand in for the evolving specimen; each is seen by
+fifteen consecutive radiographs.
 
-The specimen is a cylinder of radius and half-height $128$ voxels. It holds
-spheres of diameters $5$ and $10$ voxels at a mean solid fraction of $0.30$,
-about $34\,000$ grains in all. Target fields prescribe the solid fraction
-and the large-grain fraction of the solid at each point and time. In the
-default case the solid fraction decreases with height and a dilated column
-grows off the axis, while the initially mixed packing segregates with large
-grains moving up and outwards. Two further cases have lateral segregation
-(Section~\ref{sec:layers}).
+The scanner turns once and records 180 radiographs. The source is 1280
+voxels from the axis and the detector 1920 voxels from the source, a
+magnification of 1.5 at the axis. The detector has $432\times432$ pixels of
+pitch 1 voxel. Each pixel is the exact cone-beam path length through all
+spheres averaged over $2\times2$ rays, and Gaussian noise of standard
+deviation 0.3 voxels is added. Spectra are kept in the band
+$qd_{\rm small}=8.9$--$13.8$, where $q$ is the object wavenumber at the axis
+(six annuli). The default mesh has $2\times2\times2$ elements and four time
+knots per turn.
 
-Packings are built by random sequential addition, large grains first, with
-candidate positions accepted with a probability proportional to the target
-volume fraction of their species. Sequential addition against a wall crowds
-grains into the outermost layer, by 15--45\% in these packings; to separate
-that effect from the method, packings are generated in a larger cylinder and
-cut to the specimen, except in Section~\ref{sec:wall}. Twelve packings, drawn
-from the target fields at successive times, stand in for the evolving
-specimen, each seen by fifteen consecutive radiographs.
-
-The scanner turns once with 180 radiographs. The source is $1280$ voxels
-from the axis and the detector $1920$ voxels from the source, giving a
-magnification of $1.5$ at the axis. The detector has $432\times432$ pixels
-of pitch 1 voxel. Each pixel value is the exact cone-beam path length
-through all spheres, averaged over $2\times2$ rays across the pixel, and
-Gaussian noise of standard deviation $0.3$ voxels is added. For these data
-the transfer function divided out of the spectra is that of the $2\times2$
-average instead of the pixel aperture.
-
-\subsection{Reconstruction}
-
-Spectra are taken from patches of 48 pixels at a stride of 24 and kept in
-the band $q d_{\rm small}=8.9$--$13.8$ (object wavenumber at the axis), six
-annuli; patch means from patches of 16 pixels. The default mesh has
-$2\times2\times2$ elements and four time knots per turn.
-
-\subsection{Reference fields}
-
-The reconstruction is compared with the fields the packings actually
-contain, not with the targets from which they were drawn, which the
-sequential addition follows only approximately. These realised fields are
-the least-squares fit of Eq.~\eqref{eq:fields} to the grains, each grain
-counted as its volume at its centre. Errors are root-mean-square
-differences over points filling the specimen at eleven times through the
-turn. When reconstructions on different meshes or time bases are compared,
-all are compared with one realised field on a common basis; comparing each
-with a reference in its own basis hides what that basis cannot represent.
+The reconstruction is compared with the fields the packings contain, which
+the sequential addition makes differ from the targets. These realised fields
+are the least-squares fit of Eq.~\eqref{eq:fields} to the grains, each grain
+counted as its volume at its centre. Errors are root-mean-square differences
+over points filling the specimen at eleven times through the turn. Where
+reconstructions on different bases are compared, all are compared with one
+realised field on a common basis (Supplement Section~\ref{S-sec:reference}).
 
 % ---------------------------------------------------------------------------
 \section{Results}\label{sec:results}
 
-\subsection{Forward model}
+\subsection{Forward model}\label{sec:forward}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.6\linewidth]{spectra_check.png}
-\caption{Measured patch spectra divided by the forward model evaluated on
-the realised fields, for the self term only and with Percus--Yevick
-interference at the mean composition. Lines are medians over all patches
-and radiographs, bands the interquartile range. The shaded region is the
-default band.}
+\includegraphics[width=0.55\linewidth]{spectra.pdf}
+\caption{Measured patch spectra divided by Eq.~\eqref{eq:additive} evaluated
+on the realised fields, with the self term only and with Percus--Yevick
+interference at the mean composition. Lines: medians over all patches and
+radiographs; bands: interquartile range; shaded: default band.}
 \label{fig:spectra}
 \end{figure}
 
-Figure~\ref{fig:spectra} compares measured annulus values with
-Eq.~\eqref{eq:additive} evaluated on the realised fields, so that it tests
-the forward model alone. With the self term only, the median ratio runs from
-$0.74$ at $q d_{\rm small}=4$ to $1.12$ near 7, where the first peak of the
-structure factor of the small grains lies, and lies within $0.98$--$1.03$
-above $q d_{\rm small}=9$. With interference included, the median ratio is
-$0.94$--$1.00$ over the whole range. Within the default band the two models
-differ by a few per cent, but in a pattern that varies across the band, and
-including interference halves the species errors of the reconstruction
+The forward model is tested independently of the inversion by evaluating
+Eq.~\eqref{eq:additive} on the realised fields and comparing it with the
+measured annulus values over a wider band than the reconstruction uses.
+Figure~\ref{fig:spectra} shows the ratio. With the self term only, the
+median ratio is 0.74 at $qd_{\rm small}=4$ and 1.12 at 7, near the first peak
+of the structure factor of the small grains, and lies between 0.98 and 1.03
+above $qd_{\rm small}=9$. With interference at the mean composition, it lies
+between 0.94 and 1.00 over the whole range. In the default band the two
+kernels differ by up to 4\% with a dependence on $q$ that the self term does
+not reproduce, and this difference changes the reconstruction
 (Section~\ref{sec:default}).
 
 \subsection{Default case}\label{sec:default}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.75\linewidth]{segregation.png}
-\caption{Vertical sections ($y=0$) through the realised and reconstructed
-fields at the start, middle and end of the turn. Top two rows: solid
-fraction. Bottom two rows: large-grain fraction of the solid.}
+\includegraphics[width=0.85\linewidth]{fields.pdf}
+\caption{Vertical sections at $y=0$ through the default case at the start,
+middle and end of the turn (columns). (a)--(c) Realised and (d)--(f)
+reconstructed solid fraction; (g)--(i) realised and (j)--(l) reconstructed
+large-grain fraction of the solid.}
 \label{fig:default}
 \end{figure}
 
-Figure~\ref{fig:default} shows vertical sections of the solid fraction and
-the large-grain fraction at three times. The errors over the specimen and
-the sequence are $0.0045$ in $\phi$, $0.0067$ and $0.0074$ in the small and
-large volume fractions, $0.023$ in $c$ and $0.10$ voxels in $d_{32}$, which
-ranges from 5 to 10 voxels. With the self term only they are $0.0125$,
-$0.0126$, $0.042$ and $0.18$ voxels.
+Figure~\ref{fig:default} shows sections of the realised and reconstructed
+solid fraction and large-grain fraction at three times. The large grains
+move upwards and outwards during the turn and the dilated column appears
+off the axis in both. Over the specimen and the sequence, the errors are
+0.0045 in $\phi$, 0.0067 in $\phi_{\rm small}$, 0.0074 in
+$\phi_{\rm large}$, 0.023 in $c$ and 0.10 voxels in $d_{32}$, which ranges
+from 5 to 10 voxels. With the self-term kernel the errors are 0.0125, 0.0126,
+0.042 and 0.18 voxels for the last four.
 
-The errors of the two species are correlated, with coefficients between
-$-0.6$ and $-0.8$ over the meshes tested. The patch means fix the total
-$\phi$ closely, so an error in $\phi_{\rm large}$ reappears with the
-opposite sign in $\phi_{\rm small}$. The independent outputs are therefore
-$\phi$ and $c$.
+The errors in the two volume fractions are correlated, with coefficients
+between $-0.58$ and $-0.77$ on meshes of 2 to 4 elements across the
+specimen. The patch means determine $\phi$ more closely than the spectra
+determine either species, so an error in $\phi_{\rm large}$ is balanced by
+an opposite error in $\phi_{\rm small}$. The pair $(\phi,c)$ therefore
+separates the two sources of information.
 
 \subsection{Grains per element}\label{sec:grains}
 
+The fields are defined at the scale of an element, and the number of grains
+in an element fluctuates from one realisation to another. The least-squares
+fit of the grains onto the mesh has, at $\x$, the variance
+\begin{equation}
+\operatorname{var}\phi_a(\x)=S_{aa}(0)\,\phi_a v_a\,\bm N(\x)^\top\mathsf M^{-1}\bm N(\x),
+\label{eq:floor}
+\end{equation}
+where $\bm N$ are the shape functions, $\mathsf M$ is the mass matrix over
+the specimen and $S_{aa}(0)$ is the partial structure factor at zero
+wavenumber, by which hard spheres fluctuate less in number than independent
+points (Supplement Section~\ref{S-sec:floor}). Averaged over the specimen,
+Eq.~\eqref{eq:floor} is $\phi_a^2CS_{aa}(0)/n_a$, with $n_a$ the number of
+grains of species $a$ in an element and $C$ a constant of the mesh and the
+specimen, 2.8--5.1 for meshes of 2 to 4 elements across the specimen and 11
+for a single element. For the default mixture,
+$S_{\rm small}(0)=0.84$ and $S_{\rm large}(0)=0.42$.
+
 \begin{figure}
 \centering
-\includegraphics[width=0.9\linewidth]{grains_per_element.png}
-\caption{Errors in the small (a) and large (b) volume fractions against the
-number of grains of that species per element, with the mesh refined on the
-same radiographs (filled) or the grains made smaller at a fixed mesh, with
-pixel and patches scaled to keep the resolution per grain (open). Dashed
-lines: counting estimate, Eq.~\eqref{eq:floor}.}
+\includegraphics[width=0.95\linewidth]{grains.pdf}
+\caption{Errors in (a) $\phi_{\rm small}$ and (b) $\phi_{\rm large}$
+against the number of grains of that species per element, for meshes of 1
+to 4 elements across the specimen (filled) and for small grains of 4 to 8
+voxels at a fixed mesh, with pixel and patches scaled with the grains (open).
+Dashed: Eq.~\eqref{eq:floor} averaged over the specimen.}
 \label{fig:grains}
 \end{figure}
 
-The fields are defined at the scale of an element, and the number of
-grains in an element fluctuates. For grains placed independently, the
-least-squares fit of the grains onto the mesh has, at a point $\x$, variance
-$\phi_a v_a\,\bm N(\x)^\top\mathsf M^{-1}\bm N(\x)$, where $\bm N$ are the
-shape functions and $\mathsf M$ the mass matrix over the specimen
-(Appendix~\ref{app:floor}). Hard spheres are placed more evenly than
-independent points, and their count fluctuations are reduced by the partial
-structure factor at zero wavenumber, so that
-\begin{equation}
-\operatorname{var}\phi_a(\x)=S_{aa}(0)\,\phi_a v_a\,\bm N(\x)^\top\mathsf M^{-1}\bm N(\x).
-\label{eq:floor}
-\end{equation}
-Averaged over the specimen this is $\phi_a^2\,C\,S_{aa}(0)/n_a$, with $n_a$
-the number of grains of species $a$ in an element and $C$ a constant of the
-mesh and specimen shape, between $2.8$ and $5.1$ for the meshes with two or
-more elements across the specimen and $11$ for a single element. For the default mixture
-the Percus--Yevick values are $S_{\rm small}(0)=0.84$ and
-$S_{\rm large}(0)=0.42$.
+We varied the number of grains per element in two ways: by refining the
+mesh on the same radiographs, and by making the grains smaller at a fixed
+mesh with the pixel and patches scaled to keep the resolution per grain.
+Figure~\ref{fig:grains} shows that both series fall on one curve. For the
+large grains the error lies within 13\% of Eq.~\eqref{eq:floor}, which has
+no fitted parameter, from 0.018 at 78 grains per element to 0.0054 at 1200,
+and remains at 0.0069 for the single-element mesh, where Eq.~\eqref{eq:floor}
+gives 0.0046. Equation~\eqref{eq:floor} is the fluctuation of the realised
+field, not a lower bound on the error: the reconstruction follows part of
+the actual count fluctuations, and with the window of
+Section~\ref{sec:window} the error falls below it. The small-grain error is 1.4--2.2 times its own estimate, because
+it includes the large-grain error through the total
+(Section~\ref{sec:default}). Equation~\eqref{eq:floor} thus gives the element
+size for a required accuracy, from the grain size and the solid fraction.
 
-Figure~\ref{fig:grains} shows the errors of the two species against the
-number of their grains per element, for meshes of 1 to 4 elements across
-the specimen and for small grains of 4 to 8 voxels at a fixed mesh. The two
-series fall on one curve. For the large grains the errors agree with
-Eq.~\eqref{eq:floor}, which has no fitted parameter, from $0.018$ at 78
-grains per element to $0.0054$ at 1200, and level off near $0.005$ for the
-single-element mesh. The small-grain errors are $1.4$--$2.2$ times their own
-estimate because they include the large-grain error through the total.
-Equation~\eqref{eq:floor} therefore sets the element size for a required
-accuracy, given the grain size and solid fraction.
-
-\subsection{Detector, number of radiographs and size ratio}
+\subsection{Detector, radiographs and size ratio}
 
 \begin{table}
 \centering
-\caption{Error in the large-grain fraction of the solid, varying one setting
-from the default.}
+\caption{Error in $c$, varying one setting from the default.}
 \label{tab:sensitivity}
 \begin{tabular}{llc}
 \toprule
@@ -386,42 +370,63 @@ Random seed & four seeds & 0.023--0.028 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:sensitivity} varies one setting at a time. Detector noise of
-up to 3 voxels of path length per pixel, about 4\% of the path through the
-centre, changes the error by less than $0.002$; at 10 voxels it rises to
-$0.034$. Ninety, 180 and 360 radiographs per turn give the same errors, as
-expected when the error is set by the grains per element. A pixel of
-$1.5$ voxels limits the band to $q d_{\rm small}=6.9$--$8.9$, below the first
-zero of the small grains' form factor and near the peak of their structure
-factor, and the error rises to $0.040$; with the self term only it is
-$0.164$. A larger size ratio separates the kernels of the two species more,
-but at a fixed solid fraction it leaves fewer large grains per element (193
-at a ratio of 3, 626 at 2), and the counting fluctuation increases the
-error. The spread over four random seeds, $0.023$--$0.028$, sets the scale of
-differences that can be resolved in these comparisons.
+Table~\ref{tab:sensitivity} lists the error in $c$ when one setting is
+changed from the default. The spread over four random seeds, 0.023--0.028,
+is the resolution of these comparisons. Noise of up to 3 voxels of path
+length per pixel, about 4\% of the path through the centre, and 90 to 360
+radiographs per turn leave the error within that spread, as expected when
+the error is set by the grains per element. Noise of 10 voxels raises it to
+0.034. A pixel of 1.5 voxels limits the band to $qd_{\rm small}=6.9$--$8.9$,
+below the first zero of the small grains' form factor and close to the peak
+of their structure factor, and the error rises to 0.040; with the self term
+only it is 0.164. A larger size ratio separates the kernels of the two
+species further but, at a fixed solid fraction, leaves fewer large grains
+in an element (193 at a ratio of 3, 626 at 2, 1448 at 1.5), and the counting
+fluctuation of Eq.~\eqref{eq:floor} rises accordingly.
+
+\subsection{Spectral window}\label{sec:window}
+
+A Hann window weights the centre of a patch and discards most of its edge;
+the ratio $\sum W^2/m^2$, the fraction of the patch area that contributes
+effectively, is $(3/8)^2\approx0.14$. Windows that keep more of the patch
+reduce the scatter of the periodogram but leak more power from low
+wavenumbers, where the spectrum is largest, into the band. We compared
+Tukey windows with taper fractions 0.5 and 0.25, sine multitapers of
+$2\times2$ and $3\times3$ tapers, and Hann windows at half the stride
+(Supplement Section~\ref{S-sec:windows}). The Tukey window with taper
+fraction 0.5 gives the lowest errors. On the default mesh it lowers the
+error in $c$ on each of four seeds, from 0.023--0.028 to 0.019--0.022, and
+across meshes of 1 to 4 elements it lowers the error in
+$\phi_{\rm large}$ by 10--20\%, more where the elements hold more grains;
+$\phi$, which comes from the patch means, is unchanged. Since the error
+scales as $n_a^{-1/2}$, a reduction of 16\% corresponds to 1.4 times as many
+grains per element. A taper fraction of 0.25 increases the errors, and the
+multitapers, whose periodograms scatter close to their expected statistics,
+increase them further (0.028 and 0.041 in $c$), because their broader
+spectral windows blur the variation across annuli that separates the
+species. The other results are reported with the Hann window.
 
 \subsection{Polydispersity}
 
-When each species has a distribution of sizes, the kernel of a population
-is the volume-weighted mean of Eq.~\eqref{eq:chia} over its sizes, with
+When each species has a distribution of sizes, its kernel is the
+volume-weighted mean of Eq.~\eqref{eq:chia} over its sizes, with
 interference among all of them. For two populations with Schulz size
-distributions of coefficient of variation $0.25$ and $0.5$, each represented
-by four sizes, the volume fraction errors are $0.009$--$0.016$ and $d_{32}$
-is recovered to $0.18$--$0.25$ voxels, about twice the errors for single
-sizes. A model with only the solid fraction and the specific surface, from
-the Porod limit $\chi\to2\pi s/k^4$ \todo{cite: Porod law}, needs no
-species. It gives $d_{32}$ to $0.20$ voxels for single sizes when the band
-reaches $q d_{\rm small}=19$, but $0.62$--$0.64$ voxels for the size
-distributions, whose smallest grains are not yet in the Porod regime at that
-band.
+distributions of coefficient of variation 0.25 and 0.5, each represented by
+four sizes, the errors in the two volume fractions are 0.009--0.016 and
+$d_{32}$ is recovered to 0.18--0.25 voxels, about twice the errors for single
+sizes. Without species, the solid fraction and the specific surface $s$
+follow from the Porod limit $\chi\to2\pi s/k^4$ \todo{cite: Porod law}. With
+the band reaching $qd_{\rm small}=19$ (pixel 0.75 voxels), this gives $d_{32}$
+to 0.20 voxels for single sizes and to 0.62--0.64 voxels for the size
+distributions, whose smallest grains are not yet in the Porod regime at
+that band.
 
 \subsection{Time resolution}
 
 \begin{table}
 \centering
 \caption{Error in $c$ for changes completed over a fraction $D$ of the turn,
-against the number of time knots per turn, compared with a reference on a
-fine time basis.}
+against the number of time knots per turn.}
 \label{tab:time}
 \begin{tabular}{lcccc}
 \toprule
@@ -434,26 +439,26 @@ $D$ & 3 knots & 4 knots & 6 knots & 8 knots \\
 \end{tabular}
 \end{table}
 
-To test how fast the fields may change, the segregation and dilation were
-compressed into a fraction $D$ of the turn, with 24 packings per turn.
-Table~\ref{tab:time} gives the errors against the number of time knots. Four
-knots follow a change over a quarter turn with an error of $0.029$, against
-$0.026$ for a change spread over the whole turn. Three knots cannot follow
-the quarter-turn change; six or eight knots add unknowns without adding
-data and the errors grow. The errors at the first and last knots, which are
-constrained by radiographs on one side only, are about twice those in the
-middle of the sequence ($0.04$ against $0.02$), so the acquisition should
-extend beyond the period of interest.
+To find how fast the fields may change, the segregation and dilation were
+completed over a fraction $D$ of the turn, with 24 packings per turn, and
+reconstructed with three to eight time knots. Table~\ref{tab:time} shows
+that four knots per turn follow a change over a quarter turn with an error
+of 0.029, against 0.026 when the change is spread over the whole turn.
+Three knots cannot represent the quarter-turn change, and six or eight knots
+add unknowns without adding radiographs. The first and last knots are
+constrained by radiographs on one side only, and their errors are about
+twice those in the middle of the sequence (0.04 against 0.02 in $c$).
 
-\subsection{Three dimensions against layers}\label{sec:layers}
+\subsection{Lateral structure}\label{sec:layers}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.75\linewidth]{rotating.png}
-\caption{As Fig.~\ref{fig:default}, for side-to-side segregation whose
-direction turns by $90^\circ$ during the sequence. The section is at $y=0$,
-so the gradient lies in the section at the start and normal to it at the
-end.}
+\includegraphics[width=0.85\linewidth]{rotating.pdf}
+\caption{Side-to-side segregation whose direction turns by $90^\circ$ during
+the turn, in vertical sections at $y=0$ at the start, middle and end
+(columns): (a)--(c) realised and (d)--(f) reconstructed large-grain fraction
+of the solid. The gradient lies in the section at the start and normal to
+it at the end.}
 \label{fig:rotating}
 \end{figure}
 
@@ -468,52 +473,54 @@ with the same 3D reference.}
 Phantom & 3D & Layers only \\
 \midrule
 Segregation mainly with height (default) & 0.023 & 0.028--0.032 \\
-Lateral segregation with a twist in height & 0.024 & 0.050 \\
-Side-to-side segregation, direction turning by $90^\circ$ & 0.027 & 0.109 \\
+Lateral segregation, twisting with height & 0.024 & 0.050 \\
+Side-to-side segregation, turning by $90^\circ$ & 0.027 & 0.109 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-A method that assumes no variation across the beam could at best recover
-fields that are constant across each horizontal layer. Table~\ref{tab:layers}
-compares such fields, fitted to the same radiographs, with the 3D
-reconstruction for three phantoms, and Fig.~\ref{fig:rotating} shows the
-third. The benefit of the 3D reconstruction grows with the lateral
-structure, to a factor of four. In the default phantom the lateral
-structure of the realised fields, $0.008$ in $\phi_{\rm large}$, is no
-larger than the reconstruction error, and the two approaches differ little.
+A method that assumes no variation across the beam can at best recover
+fields that are constant across each horizontal layer. We fitted such fields
+to the same radiographs for three phantoms with increasing lateral
+structure. Table~\ref{tab:layers} shows that the error of the layer-wise
+fields grows with the lateral structure, to four times that of the 3D
+reconstruction, while the 3D error stays between 0.023 and 0.027.
+Figure~\ref{fig:rotating} shows the third phantom. In the default phantom
+the lateral variation of the realised $\phi_{\rm large}$ is 0.008 rms, no
+larger than the reconstruction error, and the two approaches differ by less
+than the spread over seeds.
 
 \subsection{Local interference}\label{sec:local}
 
 The kernels of Eq.~\eqref{eq:chia} were also evaluated at the local
-large-grain fraction from the previous solution, interpolating between five
-precomputed compositions. This changes the errors by less than $0.0002$ for
-both the default and the lateral phantom, so the mean composition suffices
-for large-grain fractions between $0.2$ and $0.8$.
+large-grain fraction of the previous solution, interpolating between five
+compositions. The errors changed by less than 0.0002 for the default and
+the lateral phantoms, whose large-grain fractions lie between 0.2 and 0.8.
+The mean composition is sufficient over that range.
 
 \subsection{Container wall}\label{sec:wall}
 
-Packings generated inside the container, without the larger cylinder,
-carry the wall layer of sequential addition. Rays that graze the surface
-cross it over long distances, and a smooth field cannot represent it. In the
-interior, more than 20 voxels from the surface, the solid fraction error is
-$0.011$ without a wall layer and $0.017$ with one. Adding, for each species,
-a second field confined to a shell one large diameter thick at the wall
-reduces it to $0.013$. Wall layers of real packings oscillate over a few
-grain diameters \todo{cite: wall layering in packings}, and the shell model
-has been tested only on synthetic packings.
+Sequential addition against a wall crowds grains into the outermost layer,
+by 15--45\% in these packings, and rays that graze the surface cross that
+layer over long distances. Packings generated inside the container carry
+this layer. In the interior, more than 20 voxels from the surface, the
+error in $\phi$ is 0.011 without a wall layer and 0.017 with one. A second
+field for each species, confined to a shell one large diameter thick at the
+wall, reduces it to 0.013. Wall layers in real packings oscillate over a few
+diameters \todo{cite: wall layering in packings}, and the shell field has
+been tested only on these synthetic packings.
 
 \subsection{Uncertainty}
 
-The posterior covariance of Eq.~\eqref{eq:ls}, scaled by the final
-$\chi^2$, predicts errors three times smaller than observed, because the
-realised fields themselves are defined only to the counting fluctuation of
-Eq.~\eqref{eq:floor}. Adding that fluctuation to the posterior variance,
-over four seeds, places 61--80\% of points within one predicted standard
-deviation for $\phi$ and 64--74\% for $\phi_{\rm large}$, and 89--98\%
-within two. For $\phi_{\rm small}$ the prediction must include the
-large-grain fluctuation; taking the two as independent gives 85--89\%
-within one standard deviation, a conservative bound.
+The posterior covariance alone predicts errors about three times smaller
+than observed, because the realised fields are themselves defined only to
+the counting fluctuation of Eq.~\eqref{eq:floor}. With that fluctuation
+added to the posterior variance, 61--80\% of points over four seeds lie
+within one predicted standard deviation for $\phi$ and 64--74\% for
+$\phi_{\rm large}$, and 89--98\% within two. For $\phi_{\rm small}$ the
+prediction includes the large-grain fluctuation; treating the two as
+independent places 85--89\% of points within one standard deviation, so
+that prediction is conservative.
 
 % ---------------------------------------------------------------------------
 \section{Experiments}\label{sec:experiments}
@@ -529,74 +536,55 @@ poses, container masking.}
 % ---------------------------------------------------------------------------
 \section{Discussion}
 
-The method measures composition, not displacement. It needs no reference
-scan and no persistence of the grain texture, so it applies to flows in
-which grains rearrange. Its accuracy is set by the number of grains per
-element, which is a property of the specimen and the chosen resolution, not
-of the scanner, so that detector noise and the number of radiographs matter
-little within the ranges tested. Equation~\eqref{eq:floor} gives the
-trade-off between spatial resolution and accuracy before an experiment.
+The method measures composition rather than displacement, needs no reference
+scan and does not require the grain texture to persist, so it applies to
+flows in which grains rearrange. In the synthetic tests its accuracy is set
+by the number of grains per element, through Eq.~\eqref{eq:floor}, by the
+detector band and, by 10--20\%, by the spectral window, while detector noise up to 4\% of the path length and
+the number of radiographs per turn between 90 and 360 change the error by
+less than the spread over seeds. Three conditions follow from the tests: a
+band reaching $qd_{\rm small}\approx9$, where the interference terms are
+small and well described at the mean composition; an acquisition extending
+beyond the period of interest, because the first and last knots are poorly
+constrained; and a wall-layer term or the exclusion of the surface region.
 
-Three requirements follow from the tests. The detector must resolve the
-small grains well enough that the band reaches $q d_{\rm small}\approx9$ or
-higher, where the interference terms are small and well described by the
-mean composition. The acquisition must extend beyond the period of
-interest, because the first and last time knots are poorly constrained. The
-container wall needs either a wall-layer term or exclusion of the surface
-region from interpretation.
-
-The tests have limits. The packings are built by sequential addition, not
-by flow, and their structure factors are close to, but not the same as,
-those of the Percus--Yevick closure. Real data add beam hardening, scatter,
-detector blur and the container, none of which are modelled here. The
-time resolution is tested for changes that are smooth in space.
+The packings are built by sequential addition, not by flow, and their
+structure factors are close to those of the Percus--Yevick closure without
+being equal to them. Beam hardening, scatter, detector blur and the
+container are not modelled. The rate of change was tested for fields smooth
+in space.
 
 Species velocities are not measured. Consecutive radiographs differ in
-angle, so the cross-spectrum between them mixes the motion of the grains
-with a parallax that varies with depth; at the angular steps of a typical
-rotation this parallax exceeds a small grain's diameter. The reconstructed
-fields do, however, constrain the fluxes through the conservation of each
-species, $\partial_\tau\phi_a+\nabla\cdot(\phi_a\bm u_a)=0$, which is a
-natural extension.
+angle, so the cross-spectrum between them combines the motion of the grains
+with a parallax that varies with depth and, at the angular steps used here,
+exceeds a small grain's diameter. The reconstructed fields constrain the
+species fluxes through conservation of each species,
+$\partial_\tau\phi_a+\nabla\cdot(\phi_a\bm u_a)=0$.
 
 % ---------------------------------------------------------------------------
 \section{Conclusions}
 
-The spectrum of a radiograph patch of a dense granular mixture is, in
-expectation, a line integral of a local spectral density linear in the
-species volume fractions, with grain interference included through
-partial structure factors at the mean composition. Radiographs from a
-rotating scanner then determine three-dimensional, time-dependent fields of
-solid fraction and composition by linear least squares. On synthetic
-radiographs of evolving bidisperse packings, the solid fraction is
-recovered to $0.005$ and the large-grain fraction to $0.023$ with about 600
-large grains per element, the large-grain error equals the counting
-fluctuation of the grains without a fitted parameter, and the 3D
-reconstruction reduces the error of layer-wise fields by up to a factor of
-four. The method is limited by the number of grains per element, by a
-detector band reaching $q d_{\rm small}\approx9$ and by the ends of the
-acquisition. \todo{experimental conclusions} The next step is to use the
-fields to constrain species fluxes through mass conservation.
-
-% ---------------------------------------------------------------------------
-\appendix
-\section{Counting fluctuation of a projected field}\label{app:floor}
-
-Let the realised field of species $a$ be the least-squares fit
-$\tilde\phi_a(\x)=\bm N(\x)^\top\mathsf M^{-1}\bm b$, with
-$\mathsf M=\int\bm N\bm N^\top\dd V$ over the specimen and
-$\bm b=\sum_j v_a\bm N(\x_j)$ over the grains $j$ of species $a$. For grain
-centres forming a stationary point process of density $\rho_a$ with
-structure factor $S_{aa}$, and shape functions varying slowly on the scale
-of the grain spacing,
-$\operatorname{cov}\bm b=\rho_a v_a^2 S_{aa}(0)\,\mathsf M$. Hence
-$\operatorname{var}\tilde\phi_a(\x)=\rho_a v_a^2 S_{aa}(0)\,\bm N^\top\mathsf
-M^{-1}\bm N=S_{aa}(0)\,\phi_a v_a\,\bm N^\top\mathsf M^{-1}\bm N$, which is
-Eq.~\eqref{eq:floor}.
+The expected spectrum of a radiograph patch of a dense granular mixture is a
+line integral of a local spectral density, linear in the species volume
+fractions when interference is evaluated at the mean composition. A rotating
+scanner therefore determines three-dimensional, time-dependent fields of
+solid fraction and composition by linear least squares. On exact synthetic
+radiographs of evolving bidisperse packings the solid fraction is recovered
+to 0.005 and the large-grain fraction to 0.023 with about 600 large grains
+per element. The large-grain error scales with the counting fluctuation of the
+grains, within 13\% of it with a Hann window and 10--20\% below it with a
+Tukey window, and fields varying with height only have errors up to four
+times larger when the segregation is lateral. The method
+is limited by the grains per element, by the need for a band reaching
+$qd_{\rm small}\approx9$ and by the ends of the acquisition, and its
+predicted uncertainties require the counting fluctuation to be added.
+\todo{experimental conclusions} The species fluxes, through mass
+conservation, are the natural extension.
 
 \section*{Code and data availability}
 The method and the synthetic tests are implemented in \texttt{pynamix}
-(modules \texttt{pynamix.spectral.tomography} and \texttt{pynamix.pdvc},
-scripts in \texttt{examples/pdvc}) \todo{repository link and version}.
+(\texttt{pynamix.spectral.tomography}, scripts in \texttt{examples/pdvc});
+every number in the text is collected in \texttt{figures/metrics.json} by
+\texttt{analysis/metrics.py} \todo{repository link and version}.
 
 \end{document}
