@@ -207,10 +207,118 @@ def _gradient_operator(node_shape):
     ).tocsr()
 
 
-class SpeciesTomography:
-    """Linear reconstruction of species volume fractions phi_a(x, tau).
+@dataclass
+class Field:
+    """One unknown field of a :class:`SpeciesTomography` reconstruction.
 
-    ``diameters``: grain diameter of each species (voxel units). ``spectra``:
+    ``chi(k)``: spectral density per unit field value at object wavenumber k
+    (for a species of diameter d, v F^2(k d / 2); for the specific surface in
+    the Porod limit, 2 pi / k^4). On the detector a field at magnification M
+    contributes M^2 chi(q M) per unit length. ``mean``: contribution per unit
+    field value to the projected solid path length (1 for a volume fraction,
+    0 for a specific surface). ``weight``: optional function of points (n, 3)
+    returning a fixed factor the field is multiplied by (a taper at the
+    specimen surface, or the shape of a wall layer). ``reg``: multiplier of
+    the gradient penalty for this field.
+    """
+
+    name: str
+    chi: object
+    mean: float = 1.0
+    weight: object = None
+    reg: float = 1.0
+
+
+def species_field(d, weight=None, name=None, correction=None, reg=1.0):
+    """Volume fraction of spheres of diameter ``d``; ``correction(k)`` optionally multiplies chi."""
+    v = np.pi * d**3 / 6
+
+    def chi(k):
+        out = v * form_factor(k * d / 2) ** 2
+        return out * correction(k) if correction is not None else out
+
+    return Field(name or f"phi_{d:g}", chi, 1.0, weight, reg)
+
+
+def mixture_fields(diameters, phi_mean, weights=None, k_max=None, n_k=800, reg=1.0, groups=None):
+    """Species fields whose kernels include grain interference at a mean composition.
+
+    The mixture spectral density is sum_ab sqrt(rho_a rho_b) v_a v_b F_a F_b S_ab(k).
+    Writing it as sum_a phi_a chi_a(k) with
+
+        chi_a = F_a sum_b sqrt(rho_b / rho_a) v_b F_b S_ab
+
+    and holding the number-density ratios and partial structure factors S_ab
+    (Percus-Yevick, :func:`pynamix.spectral.closure.py_partials`) at the mean
+    volume fractions ``phi_mean`` keeps the model linear in the fields. With
+    S_ab = delta_ab it reduces to the self term v_a F_a^2. ``weights``: optional
+    list of weight functions, one per field. ``groups``: optional list of
+    index lists; each group of sizes becomes one field (a population with
+    several diameters in the proportions of ``phi_mean``), whose kernel is
+    the volume-weighted mean of its members' chi_a.
+    """
+    from .closure import py_partials
+
+    d = np.asarray(diameters, dtype=float)
+    v = np.pi * d**3 / 6
+    rho = np.asarray(phi_mean, dtype=float) / v
+    k_max = k_max or 40.0 / d.min()
+    k = np.linspace(1e-3, k_max, n_k)
+    res = py_partials({a: d[a] for a in range(d.size)}, {a: rho[a] for a in range(d.size)}, k, return_result=True)
+    if not res.converged:
+        raise RuntimeError("Percus-Yevick partials did not converge")
+    S = res.S
+
+    def chi_one(kk, a):
+        kk = np.asarray(kk, dtype=float)
+        out = np.zeros_like(kk)
+        for b in range(d.size):
+            Sab = np.interp(kk, k, S[(min(a, b), max(a, b))], right=1.0 if a == b else 0.0)
+            out += np.sqrt(rho[b] / rho[a]) * v[b] * form_factor(kk * d[b] / 2) * Sab
+        return form_factor(kk * d[a] / 2) * out
+
+    groups = groups if groups is not None else [[a] for a in range(d.size)]
+    phi = np.asarray(phi_mean, dtype=float)
+    fields = []
+    for g, members in enumerate(groups):
+        share = phi[members] / phi[members].sum()
+
+        def chi(kk, members=members, share=share):
+            return sum(s_ * chi_one(kk, a) for s_, a in zip(share, members))
+
+        w = weights[g] if weights is not None else None
+        name = f"phi_{d[members[0]]:g}" if len(members) == 1 else f"population_{g}"
+        fields.append(Field(name, chi, 1.0, w, reg))
+    return fields
+
+
+def population_field(diameters, volume_fractions, weight=None, name=None, reg=1.0):
+    """Volume fraction of a population of spheres with several diameters, in fixed proportions.
+
+    ``volume_fractions`` (summing to one) split the population's volume among
+    ``diameters``; per unit volume fraction chi = sum_j f_j v_j F^2(k d_j / 2)
+    (self term only).
+    """
+    d = np.asarray(diameters, dtype=float)
+    f = np.asarray(volume_fractions, dtype=float) / np.sum(volume_fractions)
+    v = np.pi * d**3 / 6
+
+    def chi(k):
+        return sum(f[j] * v[j] * form_factor(k * d[j] / 2) ** 2 for j in range(d.size))
+
+    return Field(name or f"population_{np.sum(f * d):.3g}", chi, 1.0, weight, reg)
+
+
+def porod_field(weight=None, name="surface", reg=1.0):
+    """Specific surface s (interface area per volume) in the Porod limit, chi = 2 pi s / k^4."""
+    return Field(name, lambda k: 2 * np.pi / k**4, 0.0, weight, reg)
+
+
+class SpeciesTomography:
+    """Linear reconstruction of species volume fractions phi_a(x, tau), or of general fields.
+
+    ``diameters``: grain diameter of each species (voxel units); ignored when
+    ``fields`` (a list of :class:`Field`) is given. ``spectra``:
     :class:`PatchSpectra` whose annuli give the spectral rows. ``means``:
     optional second :class:`PatchSpectra`, usually of smaller patches, whose
     patch means give the rows for the total solid fraction; by default the
@@ -218,10 +326,11 @@ class SpeciesTomography:
     fraction better, while the spectra need patches holding many grains.
     ``inside``: optional function of points (n, 3) returning the fraction of
     material that the specimen boundary lets through at each point, either
-    one array (n,) for all species or (n_species, n). Boolean values cut the
-    fields off at a sharp boundary; a taper over one grain radius describes
-    grains that straddle the surface. Unknowns are nodal values on ``mesh`` for every knot
-    of ``time_basis`` and every species.
+    one array (n,) for all species or (n_species, n), used as the weight of
+    the species fields. Boolean values cut the fields off at a sharp
+    boundary; a taper over one grain radius describes grains that straddle
+    the surface. Unknowns are nodal values on ``mesh`` for every knot of
+    ``time_basis`` and every field.
     """
 
     def __init__(
@@ -237,20 +346,33 @@ class SpeciesTomography:
         rays_per_side=4,
         mean_rays_per_side=2,
         n_samples=None,
+        fields=None,
     ):
         self.geometry, self.mesh, self.basis = geometry, mesh, time_basis
-        self.d = np.asarray(diameters, dtype=float)
-        self.v = np.pi * self.d**3 / 6
+        if fields is None:
+            d = np.atleast_1d(np.asarray(diameters, dtype=float))
+
+            def weight_of(a):
+                if inside is None:
+                    return None
+
+                def w(p):
+                    v = np.asarray(inside(p), dtype=float)
+                    return v if v.ndim == 1 else v[a]
+
+                return w
+
+            fields = [species_field(d[a], weight_of(a)) for a in range(d.size)]
+        self.fields = list(fields)
         self.spectra = spectra
         self.means = means if means is not None else spectra
         self.psi = time_basis(times)
-        self.inside = inside
         self.m = rays_per_side
         self.m_mean = mean_rays_per_side if means is not None else rays_per_side
         self.n_samples = n_samples or int(np.linalg.norm(mesh.vol_shape))
         self.n_q = spectra.q.size
         self.n_nodes = mesh.n_nodes
-        self.n_species = self.d.size
+        self.n_species = len(self.fields)
         self.G = None
         self.Gm = None
 
@@ -274,10 +396,8 @@ class SpeciesTomography:
         step = (t1 - t0) / ns
         tk = t0[..., None] + (np.arange(ns) + 0.5) * step[..., None]
         pts = (src + tk[..., None] * d[..., None, :]).reshape(-1, 3)
-        w = np.repeat(step.reshape(-1), ns) / (m * m)
-        w = np.broadcast_to(w, (self.n_species, w.size))
-        if self.inside is not None:
-            w = w * np.broadcast_to(np.asarray(self.inside(pts), dtype=float), w.shape)
+        w0 = np.repeat(step.reshape(-1), ns) / (m * m)
+        w = np.stack([w0 * (f.weight(pts) if f.weight is not None else 1.0) for f in self.fields])
         patch_of = np.repeat(np.arange(centres.shape[0]), m * m * ns)
         keep = w.max(0) > 0
         return pts[keep], w[:, keep], patch_of[keep]
@@ -298,7 +418,7 @@ class SpeciesTomography:
         return out
 
     def spectral_table(self, M):
-        """(n_species, n_q, len(M)) kernel v_a M^2 <F^2(q M d_a / 2)> per unit volume fraction and length."""
+        """(n_fields, n_q, len(M)) kernel M^2 <chi(q M)> per unit field value and length."""
         sw = self.spectra
         if sw.q_nodes is not None:
             used = sw.q_weights.max(0) > 1e-6 * sw.q_weights.max()
@@ -306,8 +426,8 @@ class SpeciesTomography:
         else:
             wq, qn = np.eye(sw.q.size), sw.q
         T = np.empty((self.n_species, self.n_q, M.size))
-        for a in range(self.n_species):
-            T[a] = self.v[a] * M[None] ** 2 * (wq @ form_factor(qn[:, None] * M[None] * self.d[a] / 2) ** 2)
+        for a, f in enumerate(self.fields):
+            T[a] = M[None] ** 2 * (wq @ f.chi(qn[:, None] * M[None]))
         return T
 
     def kernels(self, i):
@@ -328,7 +448,8 @@ class SpeciesTomography:
         G = self._patch_sum(s.centres.shape[0], pof, pts, K).reshape(-1, self.n_q, self.n_species, self.n_nodes)
         mm = self.means
         pts, w, pof = self._rays(i, mm.centres, mm.size, self.m_mean)
-        Gm = self._patch_sum(mm.centres.shape[0], pof, pts, w)
+        coef = np.array([f.mean for f in self.fields])[:, None]
+        Gm = self._patch_sum(mm.centres.shape[0], pof, pts, w * coef)
         return G, Gm
 
     def build(self, verbose=True):
@@ -364,7 +485,8 @@ class SpeciesTomography:
         ``mean_rel_error`` sets both at the thickest patch. With
         ``variance_components`` the grain-count terms of the means and of each
         annulus are rescaled after every pass so that their reduced chi^2
-        approaches one. ``reg`` weights a
+        approaches one. After the solve, ``self.covariance`` holds the
+        covariance of the nodal values. ``reg`` weights a
         gradient penalty on every field, relative to the mean diagonal of the
         data term. ``spectra_weight`` scales the weight of every spectral row
         (0 fits the patch means alone).
@@ -379,7 +501,7 @@ class SpeciesTomography:
         xs = np.maximum(self.spectra.mean, 1e-3 * self.spectra.mean.max())
         xmax = xs.max()
         L = (lambda D: (D.T @ D).toarray())(_gradient_operator(self.mesh.node_shape))
-        R = np.kron(np.eye(K * A), L)
+        R = np.kron(np.eye(K), np.kron(np.diag([f.reg for f in self.fields]), L))
         phi = None
         self.history = []
         for it in range(n_irls):
@@ -408,7 +530,8 @@ class SpeciesTomography:
                         sl = slice(m * A * Nn, (m + 1) * A * Nn)
                         H[sk, sl] += self.psi[i, k] * self.psi[i, m] * Hi
             scale = np.mean(np.diag(H))
-            x = np.linalg.solve(H + reg * scale * R + 1e-9 * scale * np.eye(nu), b)
+            Hreg = H + reg * scale * R + 1e-9 * scale * np.eye(nu)
+            x = np.linalg.solve(Hreg, b)
             phi = x.reshape(K, A, Nn)
             em, eP = self.predict(phi)
             zm = (((ym - em) / sm) ** 2).mean()
@@ -421,4 +544,8 @@ class SpeciesTomography:
                 if spectra_weight > 0:
                     # rescale the grain-count term so the annulus chi^2 approaches one
                     cP *= np.sqrt(np.maximum(zP, 1e-2))
+        # covariance of the nodal values (n_knots * n_fields * n_nodes) under the weights of the last
+        # pass, rescaled by its chi^2; the bias of the regularisation is not included
+        z_all = (zm * ym.size + (zP * yP.shape[0] * yP.shape[1]).sum()) / (ym.size + yP.size)
+        self.covariance = np.linalg.inv(Hreg) * z_all
         return phi

@@ -12,7 +12,43 @@ except ImportError:
     torch = None
 from pynamix.pdvc import ConeBeamGeometry, LinearTimeBasis, RegularHexMesh
 from pynamix.pdvc.phantom import project_spheres, sphere_packing
-from pynamix.spectral.tomography import SpeciesTomography, patch_spectra, trilinear_weights
+from pynamix.spectral.tomography import (
+    SpeciesTomography,
+    mixture_fields,
+    patch_spectra,
+    population_field,
+    porod_field,
+    species_field,
+    trilinear_weights,
+)
+
+
+class TestFields(unittest.TestCase):
+    """Kernels of the field types and their limits."""
+
+    def test_population_of_one_size_is_a_species(self):
+        k = np.linspace(0.1, 5, 50)
+        self.assertTrue(np.allclose(population_field([6.0], [1.0]).chi(k), species_field(6.0).chi(k)))
+
+    def test_mixture_reduces_to_self_term_when_dilute(self):
+        k = np.linspace(2.0, 4.0, 50)  # q d = 10-20 for d = 5
+        dilute = mixture_fields([5.0, 10.0], [1e-4, 1e-4])
+        for f, d in zip(dilute, [5.0, 10.0]):
+            self.assertTrue(np.allclose(f.chi(k), species_field(d).chi(k), rtol=1e-2, atol=1e-6 * d**3))
+
+    def test_mixture_groups_average_their_members(self):
+        k = np.linspace(2.0, 4.0, 20)
+        single = mixture_fields([5.0, 6.0], [0.1, 0.1])
+        grouped = mixture_fields([5.0, 6.0], [0.1, 0.1], groups=[[0, 1]])
+        self.assertTrue(np.allclose(grouped[0].chi(k), 0.5 * (single[0].chi(k) + single[1].chi(k))))
+
+    def test_porod_matches_the_lobe_average_of_a_sphere(self):
+        # the self term v F^2 oscillates about the Porod envelope 2 pi (3 / a) / k^4 per unit volume fraction
+        d = 4.0
+        k = np.linspace(20, 40, 20000) / d
+        sphere = species_field(d).chi(k) * k**4
+        porod = porod_field().chi(k) * (6 / d) * k**4
+        self.assertAlmostEqual(sphere.mean() / porod.mean(), 1.0, delta=0.02)
 
 
 class TestSpeciesTomography(unittest.TestCase):

@@ -132,12 +132,17 @@ after each pass so that their reduced χ² approaches one.
 `examples/pdvc/segregation.py` images a bidisperse sphere packing (34 000
 grains, size ratio 2) whose solid fraction varies in 3D and whose species
 segregate during one turn, with exact cone-beam path lengths through every
-sphere. On a 2 x 2 x 2 mesh the rms nodal errors against the fields the
-packings realised are 0.015 in solid fraction, 0.024 in each species
-fraction and 0.075 in the large-grain fraction of the solid.
-`examples/pdvc/segregation_study.py` varies noise, pixel size and number of
-projections; the errors change little except with a coarse pixel, which
-pushes the spectral band down to where grain interference matters.
+sphere. With grain interference in the kernel (Percus-Yevick partial
+structure factors at the mean composition), on a 2 x 2 x 2 mesh, the rms
+errors over the specimen against the fields the packings realised are 0.0045
+in solid fraction, about 0.007 in each species fraction and 0.023 in the
+large-grain fraction of the solid. `examples/pdvc/segregation_study.py`
+varies noise, pixel size, number of projections, size ratio, mesh and grain
+size; `examples/pdvc/grain_scaling.py` compares the errors with a counting
+estimate. The fields can also be population volume fractions for
+polydisperse grains, solid fraction and specific surface (Porod tail), or
+extra fields confined to a shell at the container wall
+(`pynamix.spectral.tomography.Field`).
 `docs/pdvc/research-note.md` gives the results and what they depend on.
 
 ## Layout
@@ -189,8 +194,8 @@ those terms and `--multiscale` uses the default levels.
   dynamic poses. Interpolating reference projections in angle is not
   implemented. With a gain term, gain drift that multiplies the contribution
   of material outside K is not captured.
-- Species fractions: the structure factor is left out of the kernel, and the
-  layer of excess or deficient material at a container wall is not modelled.
+- Species fractions: interference uses the mean composition rather than the
+  local one; small-grain errors exceed their counting floor.
   Species velocities from the cross-spectra of consecutive projections are
   not implemented. `docs/pdvc/research-note.md` describes the plan.
 - Mechanical (equilibrium-gap) regularisation in place of the gradient penalty.

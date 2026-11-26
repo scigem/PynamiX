@@ -162,7 +162,8 @@ and `examples/pdvc/segregation.py` tests it on synthetic data.
 ### Test case
 
 A cylinder of spheres of two sizes (diameters 5 and 10 voxels, radius and
-half-height 128 voxels, about 34 000 grains) is imaged while the gantry
+half-height 128 voxels, about 34 000 grains; other sizes, size ratios and
+size distributions in the studies below) is imaged while the gantry
 turns once, with 180 radiographs. During the turn the solid fraction
 decreases with height and a dilated column grows off the axis, and the
 initially mixed packing segregates, with large grains moving up and
@@ -179,53 +180,101 @@ themselves, not from the targets the packings were drawn from).
 
 ### Results
 
+Errors are rms differences over points filling the specimen and 11 times
+through the turn, against the fields the packings realised. The kernel
+includes grain interference (Percus-Yevick partial structure factors at the
+mean composition of a first reconstruction).
+
 ![Reconstructed and realised fields](figures/segregation.png)
 
-In the default case (pixel = 1 voxel at the detector, noise 0.3 voxels of
-path length per pixel) the rms nodal errors are 0.015 in solid fraction,
-0.024 and 0.023 in the small and large volume fractions, 0.075 in the
-large-grain fraction of the solid and 0.32 voxels in the Sauter mean
-diameter (which ranges from 5 to 10). The segregation pattern at the end of
-the turn and the dilated column are both recovered.
+In the default case (2 x 2 x 2 mesh, 4 time knots, pixel = 1 voxel at the
+detector, noise 0.3 voxels of path length per pixel) the errors are 0.0045 in
+solid fraction, 0.0067 and 0.0074 in the small and large volume fractions,
+0.023 in the large-grain fraction of the solid and 0.10 voxels in the Sauter
+mean diameter (which ranges from 5 to 10). The segregation pattern at the
+end of the turn and the dilated column are both recovered.
 
-![Sensitivity to noise, pixel size and projections](figures/segregation_study.png)
+Grain interference. Leaving the interference out biases the spectra by up
+to 6% in the default band and 22% just below it. Including it halves the
+species errors in the default case and, with a coarse pixel, cuts them by a
+factor of four.
 
-Varying one setting at a time:
+![Errors against grains per element](figures/grains_per_element.png)
+
+Grains per element. The meshes were refined on the same data, and the
+grains made smaller at a fixed mesh with the pixel scaled to keep the
+resolution per grain. Both series fall on one curve. For the large grains
+the error matches a counting estimate with no fitted parameter: the Poisson
+variance of the grain count, reduced by the partial structure factor at
+q -> 0 (S_ll(0) = 0.42 here), projected onto the mesh. Large-grain errors
+fall as the inverse square root of the number of large grains per element,
+from 0.018 at 78 per element to 0.0054 at 1200, and stop falling near 0.005.
+Small-grain errors are about 1.6 times their counting estimate, so for them
+the reconstruction adds noise of its own.
+
+![Sensitivity to noise, pixel size, projections, seed and size ratio](figures/segregation_study.png)
+
+Other settings, varied one at a time from the default:
 
 - Detector noise up to 3 voxels of path length per pixel (about 4% of the
-  path length through the centre) changes the errors by less than 0.005; at
-  10 voxels (13%) the large-grain fraction error rises from 0.075 to 0.096.
+  path through the centre) changes the errors by less than 0.001; at 10
+  voxels (13%) the large-grain fraction error rises from 0.023 to 0.034.
 - 90, 180 or 360 radiographs per turn give the same errors.
-- A finer pixel (0.75 voxels) gives slightly better results, because the
-  usable band reaches higher q. A coarser pixel (1.5 voxels) leaves only
-  q d_small < 9, where the interference between grains is not negligible,
-  and the species errors roughly triple.
-- A second random seed gives similar errors.
+- Pixels of 0.75 and 1 voxel give similar errors; at 1.5 voxels the band is
+  q d_small = 6.9-8.9 and the species errors grow by a factor of 1.5-2.
+- A second seed gives errors 10-30% higher, which sets the scale of
+  differences that mean anything in these comparisons.
+- Size ratios of 1.5, 2 and 3 give large-grain fraction errors of 0.030,
+  0.023 and 0.035. A larger ratio separates the species more easily but,
+  at fixed solid fraction, leaves fewer large grains per element (193 at a
+  ratio of 3 against 626 at 2), and the counting floor wins.
 
-Since the errors do not fall with more data or less noise, they are set by
-the model and by the test itself, not by counting statistics. Two
-contributions have been identified. The spectral model is biased by up to
-3% in some annuli, probably from the structure factor, which the model
-leaves out; with a size ratio of 2 a 3% bias moves the species fractions by
-about 0.013. The realised fields themselves are only defined to about
-0.015-0.02 at a node, because an element holds a few hundred large grains.
-Which of the two dominates has not been established.
+Time resolution. With the change compressed into half or a quarter of the
+turn, and a reference on a fine time basis, four knots per turn remain the
+best choice: the large-grain fraction error is 0.026, 0.025 and 0.029 for a
+change over the whole, half and quarter turn. Three knots cannot follow a
+quarter-turn change (0.041); six or eight add unknowns and noise (0.035-0.042).
+
+Three dimensions against layers. Fields allowed to vary only with height,
+fitted to the same radiographs, give a large-grain fraction error of 0.031
+to 0.041 against 0.023 for the 3D reconstruction, compared on a common 3D
+reference. The phantom is mostly layered, so this is a lower bound on what
+the tomography adds.
+
+Wall layers. Packings generated against the container wall carry a layer
+of crowded grains. Compared in the interior (at least 20 voxels from the
+surface), the solid fraction error is 0.011 without a wall layer, 0.017 with
+one, and 0.013 with one when the model has a field confined to a shell at
+the wall.
+
+Polydispersity. With each population given a Schulz size distribution
+(coefficient of variation 0.25, four bins), fields for the two populations
+with kernels averaged over their bins and interference among all eight bins
+give errors of 0.013 and 0.014 in the two volume fractions, about twice the
+single-size case. A model with only solid fraction and specific surface (the
+Porod tail) gives d32 to 0.20 voxels when the band reaches q d_small = 19
+(pixel 0.75 voxels), and fails with a narrow band.
+
+Uncertainty. The posterior covariance of the least-squares fit alone
+predicts errors three times too small. Adding the counting floor of the
+realised field brings the fraction of points within one predicted standard
+deviation to 64-74% for the large-grain fraction and 61-80% for the solid
+fraction over four seeds (two standard deviations: 89-98%); the small-grain
+fraction stays under-covered (52-59% within one).
 
 ### Lessons from building the test
 
 These took most of the effort and apply equally to real data.
 
-- Grains per element. With fewer than a few hundred grains per element the
-  mesh-scale field is not well defined, and no method can recover it. On a
-  4 x 4 x 4 mesh the same test gives errors about three times larger, for
-  this reason.
+- Grains per element. Below a few hundred grains of a species per element
+  the mesh-scale field is not well defined, and no method can recover it.
+  The counting estimate gives the element size needed for a target
+  accuracy.
 - Wall layers. A packing generated against a wall crowds grains into the
   outermost layer, by 15-45% here. Rays that graze the surface run through
   it for long distances, and a smooth field cannot represent it, so the fit
-  distorts the whole field (the solid fraction error was 0.06 with the
-  layer and 0.015 without). The test now avoids the layer by cutting the
-  packings from a larger one. Real specimens have wall layers, so the model
-  will need a surface-layer term.
+  distorts the whole field. A shell field at the wall recovers most of the
+  accuracy.
 - Error model. A patch mean scatters with the number of grains it holds, so
   its absolute error grows as the square root of the path length, and the
   scatter of a spectrum includes the detector noise that was subtracted
@@ -233,23 +282,26 @@ These took most of the effort and apply equally to real data.
   made the fit fail at the specimen edge and at high noise.
 - Forward model details. The annulus width and the window spectrum must be
   included in the model, otherwise the zeros of the form factor give errors
-  of up to 40%.
+  of up to 40%. Grain interference must be included unless the band lies
+  well above q d_small = 10.
+- References. Errors must be measured against the fields the packings
+  realised, on a basis shared by every reconstruction being compared;
+  measuring each against a reference in its own basis hid both the cost of
+  too few time knots and the benefit of 3D.
 
 ## Open questions
 
-- Structure factor. Adding it to the kernel (from
-  `pynamix.spectral.closure`) should show whether the 3% spectral bias is
-  what limits the species fractions.
-- Wall layers. A term for the excess or deficit of material within a grain
-  diameter of the container wall.
-- Specimen size. Real specimens hold far more grains per element than the
-  test, so finer meshes should be possible; a larger synthetic case would
-  show how the error scales.
-- Size ratio and polydispersity. Only a ratio of 2 with two sizes has been
-  tested.
+- Small grains. Their errors exceed the counting floor by a factor of 1.6
+  and their predicted uncertainties are too small.
+- Interference with spatially varying composition. The kernel uses the
+  mean composition; iterating it on the local composition is not done.
+- Porod model. It needs a band reaching q d_small of about 19; its
+  behaviour for wide size distributions is untested.
 - Detector. Real data need flat and dark correction, linearisation for beam
   hardening, the detector blur and the calibrated pose of every radiograph.
   `pynamix.spectral.detector` has much of this for a single view.
+- Container. Its wall adds strong edges and its own material to patches
+  near the specimen surface.
 - Velocities. The rotation-corrected cross-spectrum and the 3D velocity
   reconstruction are not implemented.
 - Validation. A packing whose composition is known in 3D, for example layers
