@@ -55,6 +55,7 @@ class PatchSpectra:
     mean: np.ndarray
     q_nodes: np.ndarray = None
     q_weights: np.ndarray = None
+    noise: np.ndarray = None
 
     def select(self, keep):
         """Keep a subset of patches (bool or index array)."""
@@ -68,6 +69,7 @@ class PatchSpectra:
             self.mean[:, keep],
             self.q_nodes,
             self.q_weights,
+            self.noise,
         )
 
 
@@ -130,7 +132,9 @@ def patch_spectra(
         for k, b in enumerate(bins):
             P[:, j, k] = p2[:, idx == b].mean(-1)
     q_nodes, q_weights = _annulus_weights(W, pitch, qmag, idx, bins, dq, upsample, reach)
-    return PatchSpectra(centres, size, pitch, qmean[bins], counts[bins], P, mean, q_nodes, q_weights)
+    # noise PSD left in each annulus after the MTF division, before it was subtracted
+    noise = np.array([(pitch**2 * noise_var / m2[idx == b]).mean() for b in bins])
+    return PatchSpectra(centres, size, pitch, qmean[bins], counts[bins], P, mean, q_nodes, q_weights, noise)
 
 
 def _annulus_weights(W, pitch, qmag, idx, bins, dq, upsample, reach):
@@ -206,36 +210,57 @@ def _gradient_operator(node_shape):
 class SpeciesTomography:
     """Linear reconstruction of species volume fractions phi_a(x, tau).
 
-    ``diameters``: grain diameter of each species (voxel units). ``inside``:
-    optional function of points (n, 3) returning True inside the specimen, so
-    the fields are cut off at a known boundary instead of being smoothed
-    across it. Unknowns are nodal values on ``mesh`` for every knot of
-    ``time_basis`` and every species.
+    ``diameters``: grain diameter of each species (voxel units). ``spectra``:
+    :class:`PatchSpectra` whose annuli give the spectral rows. ``means``:
+    optional second :class:`PatchSpectra`, usually of smaller patches, whose
+    patch means give the rows for the total solid fraction; by default the
+    means of ``spectra`` are used. Small patches resolve the total solid
+    fraction better, while the spectra need patches holding many grains.
+    ``inside``: optional function of points (n, 3) returning the fraction of
+    material that the specimen boundary lets through at each point, either
+    one array (n,) for all species or (n_species, n). Boolean values cut the
+    fields off at a sharp boundary; a taper over one grain radius describes
+    grains that straddle the surface. Unknowns are nodal values on ``mesh`` for every knot
+    of ``time_basis`` and every species.
     """
 
     def __init__(
-        self, geometry, mesh, time_basis, times, diameters, spectra, inside=None, rays_per_side=4, n_samples=None
+        self,
+        geometry,
+        mesh,
+        time_basis,
+        times,
+        diameters,
+        spectra,
+        means=None,
+        inside=None,
+        rays_per_side=4,
+        mean_rays_per_side=2,
+        n_samples=None,
     ):
         self.geometry, self.mesh, self.basis = geometry, mesh, time_basis
         self.d = np.asarray(diameters, dtype=float)
         self.v = np.pi * self.d**3 / 6
         self.spectra = spectra
+        self.means = means if means is not None else spectra
         self.psi = time_basis(times)
         self.inside = inside
         self.m = rays_per_side
-        self.n_samples = n_samples or int(2 * np.linalg.norm(mesh.vol_shape))
-        self.n_rows = 1 + spectra.q.size
+        self.m_mean = mean_rays_per_side if means is not None else rays_per_side
+        self.n_samples = n_samples or int(np.linalg.norm(mesh.vol_shape))
+        self.n_q = spectra.q.size
         self.n_nodes = mesh.n_nodes
         self.n_species = self.d.size
         self.G = None
+        self.Gm = None
 
-    def _rays(self, i):
-        """Sample points (n_patch, m*m, ns, 3), steps (n_patch, m*m) for projection i."""
-        g, s = self.geometry, self.spectra
-        off = ((np.arange(self.m) + 0.5) / self.m - 0.5) * s.size
+    def _rays(self, i, centres, size, m):
+        """Sample points (n_patch * m * m * ns, 3), weights and patch index for projection i."""
+        g = self.geometry
+        off = ((np.arange(m) + 0.5) / m - 0.5) * size
         orr, occ = np.meshgrid(off, off, indexing="ij")
-        r = s.centres[:, 0, None] + orr.ravel()[None]
-        c = s.centres[:, 1, None] + occ.ravel()[None]
+        r = centres[:, 0, None] + orr.ravel()[None]
+        c = centres[:, 1, None] + occ.ravel()[None]
         pix = g.det[i] + c[..., None] * g.u[i] + r[..., None] * g.v[i]
         src = g.src[i]
         d = pix - src
@@ -245,115 +270,155 @@ class SpeciesTomography:
         cc = src @ src - radius**2
         disc = np.sqrt(np.clip(b * b - cc, 0, None))
         t0, t1 = -b - disc, -b + disc
-        step = (t1 - t0) / self.n_samples
-        tk = t0[..., None] + (np.arange(self.n_samples) + 0.5) * step[..., None]
-        pts = src + tk[..., None] * d[..., None, :]
-        return pts, step
+        ns = self.n_samples
+        step = (t1 - t0) / ns
+        tk = t0[..., None] + (np.arange(ns) + 0.5) * step[..., None]
+        pts = (src + tk[..., None] * d[..., None, :]).reshape(-1, 3)
+        w = np.repeat(step.reshape(-1), ns) / (m * m)
+        w = np.broadcast_to(w, (self.n_species, w.size))
+        if self.inside is not None:
+            w = w * np.broadcast_to(np.asarray(self.inside(pts), dtype=float), w.shape)
+        patch_of = np.repeat(np.arange(centres.shape[0]), m * m * ns)
+        keep = w.max(0) > 0
+        return pts[keep], w[:, keep], patch_of[keep]
 
-    def kernels(self, i):
-        """(n_patch, n_rows, n_species, n_nodes) sensitivity of projection i.
-
-        Row 0 is the patch mean of X, rows 1.. the PSD in each annulus.
-        """
+    def _magnification(self, i, pts):
         g = self.geometry
-        pts, step = self._rays(i)
-        n_patch, n_ray, ns, _ = pts.shape
         nrm = np.cross(g.u[i], g.v[i])
         nrm /= np.linalg.norm(nrm)
-        sdd = (g.det[i] - g.src[i]) @ nrm
-        flat = pts.reshape(-1, 3)
-        M = sdd / ((flat - g.src[i]) @ nrm)
-        w = np.repeat(step.reshape(-1), ns) / n_ray
-        if self.inside is not None:
-            w = w * self.inside(flat)
+        return ((g.det[i] - g.src[i]) @ nrm) / ((pts - g.src[i]) @ nrm)
+
+    def _patch_sum(self, n_patch, patch_of, pts, K):
+        """(n_patch, n_rows, n_nodes): sum over each patch's samples of K (n_rows, n) times N."""
+        N = trilinear_weights(pts, self.mesh.vol_shape, self.mesh.node_shape)
+        out = np.empty((n_patch, K.shape[0], self.n_nodes))
+        S = sp.csr_matrix((np.ones(pts.shape[0]), (patch_of, np.arange(pts.shape[0]))), shape=(n_patch, pts.shape[0]))
+        for r in range(K.shape[0]):
+            out[:, r] = (S.multiply(K[r][None]) @ N).toarray()
+        return out
+
+    def spectral_table(self, M):
+        """(n_species, n_q, len(M)) kernel v_a M^2 <F^2(q M d_a / 2)> per unit volume fraction and length."""
         sw = self.spectra
         if sw.q_nodes is not None:
-            wq = sw.q_weights[:, sw.q_weights.max(0) > 1e-6 * sw.q_weights.max()]
-            qn = sw.q_nodes[sw.q_weights.max(0) > 1e-6 * sw.q_weights.max()]
+            used = sw.q_weights.max(0) > 1e-6 * sw.q_weights.max()
+            wq, qn = sw.q_weights[:, used], sw.q_nodes[used]
         else:
             wq, qn = np.eye(sw.q.size), sw.q
-        K = np.empty((self.n_rows, self.n_species, flat.shape[0]))
-        K[0] = w
+        T = np.empty((self.n_species, self.n_q, M.size))
         for a in range(self.n_species):
-            F2 = wq @ form_factor(qn[:, None] * M[None] * self.d[a] / 2) ** 2
-            K[1:, a] = self.v[a] * M[None] ** 2 * F2 * w[None]
-        N = trilinear_weights(flat, self.mesh.vol_shape, self.mesh.node_shape)
-        # sum the samples of each patch: block rows of N
-        patch_of = np.repeat(np.arange(n_patch), n_ray * ns)
-        S = sp.csr_matrix(
-            (np.ones(flat.shape[0]), (patch_of, np.arange(flat.shape[0]))), shape=(n_patch, flat.shape[0])
-        )
-        G = np.empty((n_patch, self.n_rows, self.n_species, self.n_nodes))
-        for r in range(self.n_rows):
-            for a in range(self.n_species):
-                G[:, r, a] = (S.multiply(K[r, a][None]) @ N).toarray()
-        return G
+            T[a] = self.v[a] * M[None] ** 2 * (wq @ form_factor(qn[:, None] * M[None] * self.d[a] / 2) ** 2)
+        return T
+
+    def kernels(self, i):
+        """Spectral sensitivity (n_patch, n_q, n_species, n_nodes) and mean sensitivity (n_mean, n_species, n_nodes).
+
+        The spectral kernel depends on position only through the
+        magnification, so it is tabulated on a fine grid of M and interpolated.
+        """
+        s = self.spectra
+        pts, w, pof = self._rays(i, s.centres, s.size, self.m)
+        M = self._magnification(i, pts)
+        Mg = np.linspace(M.min(), M.max() + 1e-9, 256)
+        T = self.spectral_table(Mg)
+        K = np.empty((self.n_q * self.n_species, pts.shape[0]))
+        for a in range(self.n_species):
+            for b in range(self.n_q):
+                K[b * self.n_species + a] = np.interp(M, Mg, T[a, b]) * w[a]
+        G = self._patch_sum(s.centres.shape[0], pof, pts, K).reshape(-1, self.n_q, self.n_species, self.n_nodes)
+        mm = self.means
+        pts, w, pof = self._rays(i, mm.centres, mm.size, self.m_mean)
+        Gm = self._patch_sum(mm.centres.shape[0], pof, pts, w)
+        return G, Gm
 
     def build(self, verbose=True):
         n = self.geometry.n_proj
-        self.G = np.empty(
-            (n, self.spectra.centres.shape[0], self.n_rows, self.n_species, self.n_nodes), dtype=np.float32
-        )
+        self.G = np.empty((n, self.spectra.centres.shape[0], self.n_q, self.n_species, self.n_nodes), dtype=np.float32)
+        self.Gm = np.empty((n, self.means.centres.shape[0], self.n_species, self.n_nodes), dtype=np.float32)
         for i in range(n):
-            self.G[i] = self.kernels(i)
-            if verbose and (i + 1) % max(1, n // 10) == 0:
+            self.G[i], self.Gm[i] = self.kernels(i)
+            if verbose and (i + 1) % max(1, n // 5) == 0:
                 print(f"  kernels {i + 1}/{n}")
 
     def predict(self, phi):
-        """Model mean and PSD for nodal fields ``phi`` (n_knots, n_species, n_nodes)."""
+        """Model patch means (n_proj, n_mean) and PSD (n_proj, n_patch, n_q) for nodal fields (n_knots, n_species, n_nodes)."""
         phi_t = np.einsum("tk,kan->tan", self.psi, phi)
-        out = np.einsum("tpran,tan->tpr", self.G, phi_t)
-        return out[..., 0], out[..., 1:]
+        mean = np.einsum("tpan,tan->tp", self.Gm, phi_t)
+        P = np.einsum("tpran,tan->tpr", self.G, phi_t)
+        return mean, P
 
-    def solve(self, reg=1e-3, mean_rel_error=0.01, spectra_weight=1.0, n_irls=3, verbose=True):
+    def solve(
+        self, reg=1e-3, mean_rel_error=0.02, spectra_weight=1.0, n_irls=4, variance_components=True, verbose=True
+    ):
         """Weighted least squares for the nodal fields.
 
         Each annulus value is the mean of ``n`` exponentially distributed
-        periodogram bins, so its standard deviation is its expectation over
-        sqrt(n). The expectation is taken from the previous model prediction
-        (the data on the first pass), which is iterated ``n_irls`` times. The
-        patch mean is given a relative error ``mean_rel_error``. ``reg``
-        weights a gradient penalty on every field, relative to the mean
-        diagonal of the data term. ``spectra_weight`` scales the weight of
-        every spectral row (0 fits the patch means alone).
+        periodogram bins, so its standard deviation is at least its
+        expectation, plus the detector noise PSD that was subtracted, over
+        sqrt(n). Expectations come from the previous model
+        prediction (the data on the first pass), iterated ``n_irls`` times.
+        The number of grains in a patch fluctuates, so a patch mean has an
+        absolute error growing as the square root of its value, and an
+        annulus has a relative grain-count error growing as one over the
+        square root of the patch mean, on top of the periodogram scatter.
+        ``mean_rel_error`` sets both at the thickest patch. With
+        ``variance_components`` the grain-count terms of the means and of each
+        annulus are rescaled after every pass so that their reduced chi^2
+        approaches one. ``reg`` weights a
+        gradient penalty on every field, relative to the mean diagonal of the
+        data term. ``spectra_weight`` scales the weight of every spectral row
+        (0 fits the patch means alone).
         """
         if self.G is None:
             self.build(verbose)
-        s = self.spectra
         K, A, Nn = self.psi.shape[1], self.n_species, self.n_nodes
         nu = K * A * Nn
-        data = np.concatenate([s.mean[..., None], s.P], -1)  # (n_proj, n_patch, n_rows)
-        expect = np.abs(data).copy()
-        D = _gradient_operator(self.mesh.node_shape)
-        L = (D.T @ D).toarray()
+        ym, yP = self.means.mean, self.spectra.P
+        em, eP = np.abs(ym).copy(), np.abs(yP).copy()
+        cm, cP = 1.0, np.ones(self.n_q)  # variance-component scales
+        xs = np.maximum(self.spectra.mean, 1e-3 * self.spectra.mean.max())
+        xmax = xs.max()
+        L = (lambda D: (D.T @ D).toarray())(_gradient_operator(self.mesh.node_shape))
+        R = np.kron(np.eye(K * A), L)
         phi = None
+        self.history = []
         for it in range(n_irls):
-            sig = np.empty_like(expect)
-            floor = 1e-3 * np.abs(expect[..., 1:]).max()
-            sig[..., 0] = mean_rel_error * np.maximum(expect[..., 0], 1e-3 * expect[..., 0].max())
-            sig[..., 1:] = np.maximum(expect[..., 1:], floor) / np.sqrt(s.n) / max(spectra_weight, 1e-12)
+            # grain-count scatter: absolute error of a patch mean grows as sqrt(X)
+            sm = cm * mean_rel_error * np.sqrt(np.maximum(em, 1e-3 * em.max()) * em.max())
+            # periodogram scatter 1/n plus grain-count scatter, relative variance ~ 1/X
+            rel2 = 1.0 / self.spectra.n + (cP * mean_rel_error) ** 2 * (xmax / xs)[..., None]
+            # the periodogram scatter is that of signal plus detector noise
+            pos = np.maximum(eP, 1e-3 * eP.max())
+            nP = self.spectra.noise if self.spectra.noise is not None else 0.0
+            sP = np.sqrt((pos + nP) ** 2 / self.spectra.n + pos**2 * (rel2 - 1.0 / self.spectra.n))
+            sP = sP / max(spectra_weight, 1e-12)
             H = np.zeros((nu, nu))
             b = np.zeros(nu)
             for i in range(self.geometry.n_proj):
-                Gi = self.G[i].astype(np.float64).reshape(-1, A * Nn) / sig[i].reshape(-1, 1)
-                yi = (data[i] / sig[i]).reshape(-1)
+                Gs = self.G[i].astype(np.float64).reshape(-1, A * Nn) / sP[i].reshape(-1, 1)
+                Gm = self.Gm[i].astype(np.float64).reshape(-1, A * Nn) / sm[i][:, None]
+                Gi = np.vstack([Gm, Gs])
+                yi = np.concatenate([ym[i] / sm[i], (yP[i] / sP[i]).reshape(-1)])
                 Hi, bi = Gi.T @ Gi, Gi.T @ yi
-                for k in np.nonzero(self.psi[i])[0]:
+                nz = np.nonzero(self.psi[i])[0]
+                for k in nz:
                     sk = slice(k * A * Nn, (k + 1) * A * Nn)
                     b[sk] += self.psi[i, k] * bi
-                    for m in np.nonzero(self.psi[i])[0]:
-                        sm = slice(m * A * Nn, (m + 1) * A * Nn)
-                        H[sk, sm] += self.psi[i, k] * self.psi[i, m] * Hi
+                    for m in nz:
+                        sl = slice(m * A * Nn, (m + 1) * A * Nn)
+                        H[sk, sl] += self.psi[i, k] * self.psi[i, m] * Hi
             scale = np.mean(np.diag(H))
-            R = np.kron(np.eye(K * A), L)
             x = np.linalg.solve(H + reg * scale * R + 1e-9 * scale * np.eye(nu), b)
             phi = x.reshape(K, A, Nn)
-            m, P = self.predict(phi)
-            expect = np.concatenate([m[..., None], P], -1)
+            em, eP = self.predict(phi)
+            zm = (((ym - em) / sm) ** 2).mean()
+            zP = (((yP - eP) / sP) ** 2).mean((0, 1))
+            self.history.append(dict(chi2_means=zm, chi2_spectra=zP))
             if verbose:
-                z2 = ((data - expect) / sig) ** 2
-                print(
-                    f"  pass {it}: reduced chi^2 {z2.mean():.2f} (means {z2[..., 0].mean():.2f}, "
-                    f"spectra {z2[..., 1:].mean():.2f})"
-                )
+                print(f"  pass {it}: reduced chi^2 means {zm:.2f}, spectra " + " ".join(f"{z:.2f}" for z in zP))
+            if variance_components:
+                cm *= np.sqrt(zm)
+                if spectra_weight > 0:
+                    # rescale the grain-count term so the annulus chi^2 approaches one
+                    cP *= np.sqrt(np.maximum(zP, 1e-2))
         return phi

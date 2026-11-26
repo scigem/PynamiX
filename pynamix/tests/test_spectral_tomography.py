@@ -66,6 +66,29 @@ class TestSpeciesTomography(unittest.TestCase):
         ok = mean > 0.5 * mean.max()
         self.assertTrue(np.median(np.abs(spec.mean[ok] / mean[ok] - 1)) < 0.02)
 
+        # separate, smaller mean patches and a per-species boundary give the same means
+        small = patch_spectra(X, size=8, q_band=(0, np.inf))
+
+        def inside2(p):
+            return np.stack([inside(p), inside(p)])
+
+        t2 = SpeciesTomography(
+            g,
+            mesh,
+            LinearTimeBasis(1),
+            np.zeros(g.n_proj),
+            [4.0, 8.0],
+            spec,
+            means=small,
+            inside=inside2,
+            mean_rays_per_side=4,
+        )
+        t2.build(verbose=False)
+        mean2, P2 = t2.predict(np.stack([0.5 * f, 0.5 * f])[None])
+        ok = mean2 > 0.5 * mean2.max()
+        self.assertEqual(P2.shape, (g.n_proj, spec.centres.shape[0], spec.q.size))
+        self.assertTrue(np.median(np.abs(small.mean[ok] / mean2[ok] - 1)) < 0.03)
+
     @unittest.skipIf(torch is None, "PyTorch is not installed")
     def test_dilute_packing_spectrum_matches_self_term(self):
         N, d = 64, 6.0

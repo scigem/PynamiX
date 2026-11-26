@@ -156,65 +156,97 @@ provide the initial guess that P-DVC needs when the motion is large.
 
 ## First prototype
 
-`pynamix/spectral/tomography.py` and `examples/pdvc/species.py` implement the species volume
-fraction part on synthetic data.
+`pynamix/spectral/tomography.py` implements the species volume fraction part
+and `examples/pdvc/segregation.py` tests it on synthetic data.
 
-It images a cylinder of spheres of two sizes (diameter ratio 2) while the
-gantry turns once. The fraction of large grains varies with height and the
-front between large-rich and small-rich material moves during the turn. The
-radiographs are exact cone-beam path lengths through every sphere. Each
-radiograph is cut into patches, the spectrum of each patch is taken and the
-two species' volume fractions are reconstructed on a 4 x 4 x 4 element mesh
-with four time knots. The result is compared with the fields the packings
-actually realised.
+### Test case
 
-What works:
+A cylinder of spheres of two sizes (diameters 5 and 10 voxels, radius and
+half-height 128 voxels, about 34 000 grains) is imaged while the gantry
+turns once, with 180 radiographs. During the turn the solid fraction
+decreases with height and a dilated column grows off the axis, and the
+initially mixed packing segregates, with large grains moving up and
+outwards. Twelve packings, drawn from the target fields at successive times,
+stand in for the evolving specimen; each is seen by 15 consecutive
+radiographs. The radiographs are exact cone-beam path lengths through every
+sphere, with Gaussian detector noise.
 
-- The forward model. For a uniform packing the measured patch spectra agree
-  with the model to within about 5%. This needed the model to include the
-  width of each frequency annulus and the blurring of the spectrum by the
-  analysis window. Without them the zeros of the form factor are filled in
-  and the error reaches 40%.
-- The pipeline from radiographs to fields runs end to end, and the
-  reconstructed fields show the imposed trend: large grains on top, spreading
-  downward over time.
+Each radiograph is cut into 48-pixel patches for the spectra and 16-pixel
+patches for the mean path length. The two species' volume fractions are
+reconstructed on a 2 x 2 x 2 element mesh with four time knots, and compared
+with the fields the packings actually contain (computed from the grains
+themselves, not from the targets the packings were drawn from).
 
-What does not yet work:
+### Results
 
-- Accuracy. Nodal errors are about 0.06 in each species' volume fraction and
-  about 0.2 in the large-grain fraction of the solid. That is too large to be
-  useful.
-- Sensitivity. With a size ratio of 2 the two species are told apart by a
-  small difference in spectral amplitude, so a 10% error in the spectrum
-  moves the large-grain volume fraction by about 0.045. Larger size ratios
-  will be easier.
-- Patch statistics. A patch holds few large grains, so its spectrum scatters
-  more than the standard periodogram statistics predict. The weighting in
-  the fit does not yet account for this.
-- Solid fraction alone. Using only the patch means, the coarse solid
-  fraction of a single packing comes back with errors of about 0.05, against
-  0.009 for a smooth field without grains. The reason is not yet understood.
-  It is the first thing to investigate, since the species fractions cannot
-  be better than this.
+![Reconstructed and realised fields](figures/segregation.png)
 
-Two lessons came from building the test. A packing whose grains are all
-inside the container has a depleted layer at the wall, which in a small
-specimen changes the interior solid fraction by tens of percent. Real
-specimens have this layer too. Separately, the realised packing differs from
-the intended fields at mesh scale, so results must be compared with what
-was actually generated.
+In the default case (pixel = 1 voxel at the detector, noise 0.3 voxels of
+path length per pixel) the rms nodal errors are 0.015 in solid fraction,
+0.024 and 0.023 in the small and large volume fractions, 0.075 in the
+large-grain fraction of the solid and 0.32 voxels in the Sauter mean
+diameter (which ranges from 5 to 10). The segregation pattern at the end of
+the turn and the dilated column are both recovered.
+
+![Sensitivity to noise, pixel size and projections](figures/segregation_study.png)
+
+Varying one setting at a time:
+
+- Detector noise up to 3 voxels of path length per pixel (about 4% of the
+  path length through the centre) changes the errors by less than 0.005; at
+  10 voxels (13%) the large-grain fraction error rises from 0.075 to 0.096.
+- 90, 180 or 360 radiographs per turn give the same errors.
+- A finer pixel (0.75 voxels) gives slightly better results, because the
+  usable band reaches higher q. A coarser pixel (1.5 voxels) leaves only
+  q d_small < 9, where the interference between grains is not negligible,
+  and the species errors roughly triple.
+- A second random seed gives similar errors.
+
+Since the errors do not fall with more data or less noise, they are set by
+the model and by the test itself, not by counting statistics. Two
+contributions have been identified. The spectral model is biased by up to
+3% in some annuli, probably from the structure factor, which the model
+leaves out; with a size ratio of 2 a 3% bias moves the species fractions by
+about 0.013. The realised fields themselves are only defined to about
+0.015-0.02 at a node, because an element holds a few hundred large grains.
+Which of the two dominates has not been established.
+
+### Lessons from building the test
+
+These took most of the effort and apply equally to real data.
+
+- Grains per element. With fewer than a few hundred grains per element the
+  mesh-scale field is not well defined, and no method can recover it. On a
+  4 x 4 x 4 mesh the same test gives errors about three times larger, for
+  this reason.
+- Wall layers. A packing generated against a wall crowds grains into the
+  outermost layer, by 15-45% here. Rays that graze the surface run through
+  it for long distances, and a smooth field cannot represent it, so the fit
+  distorts the whole field (the solid fraction error was 0.06 with the
+  layer and 0.015 without). The test now avoids the layer by cutting the
+  packings from a larger one. Real specimens have wall layers, so the model
+  will need a surface-layer term.
+- Error model. A patch mean scatters with the number of grains it holds, so
+  its absolute error grows as the square root of the path length, and the
+  scatter of a spectrum includes the detector noise that was subtracted
+  from it. Weighting by a relative error, or leaving out the noise term,
+  made the fit fail at the specimen edge and at high noise.
+- Forward model details. The annulus width and the window spectrum must be
+  included in the model, otherwise the zeros of the form factor give errors
+  of up to 40%.
 
 ## Open questions
 
-- Interference terms. The model keeps only the self term. Its error in the
-  chosen q band at realistic solid fractions should be measured, or the
-  structure factor of `pynamix.spectral.closure` added to the kernel.
-- Statistics. A patch holds few large grains, so its spectrum fluctuates
-  more than the periodogram statistics alone suggest. Weights that include
-  grain-number fluctuations are needed for honest uncertainties.
-- Resolution. The patch size sets the lateral resolution and the number of
-  grains per patch sets the noise. The trade-off between the two, and against
-  the number of radiographs per unit time, has not been explored.
+- Structure factor. Adding it to the kernel (from
+  `pynamix.spectral.closure`) should show whether the 3% spectral bias is
+  what limits the species fractions.
+- Wall layers. A term for the excess or deficit of material within a grain
+  diameter of the container wall.
+- Specimen size. Real specimens hold far more grains per element than the
+  test, so finer meshes should be possible; a larger synthetic case would
+  show how the error scales.
+- Size ratio and polydispersity. Only a ratio of 2 with two sizes has been
+  tested.
 - Detector. Real data need flat and dark correction, linearisation for beam
   hardening, the detector blur and the calibrated pose of every radiograph.
   `pynamix.spectral.detector` has much of this for a single view.
@@ -227,7 +259,7 @@ was actually generated.
 
 1. Read the P-DVC literature, starting from the reviews by Roux, Hild and
    co-workers, and run `examples/pdvc/synthetic.py` to see the method work.
-2. Run `examples/pdvc/species.py`, then extend it to a monodisperse case with a
+2. Run `examples/pdvc/segregation.py`, then extend it to a monodisperse case with a
    solid-fraction gradient, which tests the Porod and mean terms alone.
 3. Replace the synthetic radiographs with DynaTOM radiographs of a static,
    layered bidisperse specimen and compare with its full CT scan.

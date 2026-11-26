@@ -120,21 +120,25 @@ Both are linear in φ_a, so with φ_a written on a C8 mesh times temporal hat
 functions the reconstruction is a weighted linear least-squares problem.
 Solid fraction and Sauter mean diameter follow from the φ_a.
 
-`examples/pdvc/species.py` images a bidisperse sphere packing (size ratio 2)
-whose large-grain fraction varies in space and time, with exact cone-beam
-path lengths through every sphere. The results are compared with the fields
-the packings actually realised. In this test the patch spectra agree with
-the model to within about 5% for a uniform packing. The reconstructed fields
-show the imposed trend, but the nodal errors (about 0.06 in each volume
-fraction and 0.2 in the large-grain fraction of the solid) are too large to
-be useful yet. Fitting the patch means alone recovers the coarse solid
-fraction of a single packing to about 0.05, against 0.009 for a smooth field
-without grains; the reason is not yet understood. Two
-limits were identified. With a size ratio of 2 the species are separated
-by the difference between φ_s/d_s + φ_l/d_l and φ_s + φ_l, so an error of
-10% in the spectral amplitude moves φ_large by about 0.045. A patch also
-holds few large grains, so its mean and spectrum scatter by about 5% between
-patches, more than the periodogram statistics alone predict.
+The patch means come from smaller patches than the spectra, since they
+resolve the total solid fraction better while the spectra need many grains
+per patch. Grains that straddle the specimen surface are described by a
+taper over one grain radius. The weights follow grain-count statistics: a
+patch mean has an absolute error growing as the square root of its value,
+and an annulus has the periodogram scatter of signal plus detector noise
+together with a relative grain-count term. The grain-count terms are scaled
+after each pass so that their reduced χ² approaches one.
+
+`examples/pdvc/segregation.py` images a bidisperse sphere packing (34 000
+grains, size ratio 2) whose solid fraction varies in 3D and whose species
+segregate during one turn, with exact cone-beam path lengths through every
+sphere. On a 2 x 2 x 2 mesh the rms nodal errors against the fields the
+packings realised are 0.015 in solid fraction, 0.024 in each species
+fraction and 0.075 in the large-grain fraction of the solid.
+`examples/pdvc/segregation_study.py` varies noise, pixel size and number of
+projections; the errors change little except with a coarse pixel, which
+pushes the spectral band down to where grain interference matters.
+`docs/pdvc/research-note.md` gives the results and what they depend on.
 
 ## Layout
 
@@ -185,12 +189,10 @@ those terms and `--multiscale` uses the default levels.
   dynamic poses. Interpolating reference projections in angle is not
   implemented. With a gain term, gain drift that multiplies the contribution
   of material outside K is not captured.
-- Species fractions: the structure factor is left out of the kernel; the
-  weights ignore grain-number fluctuations; patch means and spectra share one
-  patch size although the means are better conditioned with small patches;
-  the depleted layer at a container wall is not modelled. Species velocities
-  from the cross-spectra of consecutive projections are not implemented.
-  `docs/research-note.md` describes the plan.
+- Species fractions: the structure factor is left out of the kernel, and the
+  layer of excess or deficient material at a container wall is not modelled.
+  Species velocities from the cross-spectra of consecutive projections are
+  not implemented. `docs/pdvc/research-note.md` describes the plan.
 - Mechanical (equilibrium-gap) regularisation in place of the gradient penalty.
 - The sensitivity is evaluated at the current state with ∇f0 sampled at the
   warped points. For sharp features its mismatch with the exact derivative of
